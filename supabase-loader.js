@@ -8,7 +8,7 @@
 // ============================================================
 
 // >>> ÚNICA COISA QUE MUDA DE UM CLIENTE PRO OUTRO NESTE ARQUIVO <<<
-const LOJA_SLUG = "mestre-do-churrasco"
+const LOJA_SLUG = "brasa-mix"
 
 // Config do projeto Supabase (igual pra todos os clientes,
 // é o mesmo projeto/banco compartilhado)
