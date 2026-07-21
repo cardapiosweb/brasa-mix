@@ -173,6 +173,7 @@ function renderizarProdutos() {
 function criarCardProduto(produto) {
     const precoFormatado = produto.preco.toFixed(2).replace(".", ",")
     const esgotado = !!produto.esgotado
+    const semSetas = !!produto.esconder_setas
     const badgeOferta = produto.oferta ? `<span class="badge-oferta">Oferta</span>` : ""
     const badgeEsgotado = esgotado ? `<span class="badge-esgotado">Esgotado</span>` : ""
 
@@ -193,11 +194,12 @@ function criarCardProduto(produto) {
             <div class="product-footer">
                 <p class="font-bold text-lg text-laranja">R$ ${precoFormatado}</p>
                 <div class="product-footer-actions">
+                    ${semSetas ? "" : `
                     <div class="qty-selector" data-qty="1">
                         <button class="qty-btn qty-decrease" type="button">−</button>
                         <span class="qty-value">1</span>
                         <button class="qty-btn qty-increase" type="button">+</button>
-                    </div>
+                    </div>`}
                     <button class="add-to-cart-btn${esgotado ? " esgotado-btn" : ""}" data-id="${produto.id}" data-name="${produto.nome}" data-price="${produto.preco}" data-esgotado="${esgotado}">
                         <i class="fa ${esgotado ? "fa-ban" : "fa-cart-plus"} text-lg"></i>
                     </button>

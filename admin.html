@@ -503,6 +503,7 @@
             <label><input type="checkbox" id="prod-oferta" /> Em oferta</label>
             <label><input type="checkbox" id="prod-esgotado" /> Esgotado</label>
             <label><input type="checkbox" id="prod-retirada-apenas" /> Só retirada</label>
+            <label><input type="checkbox" id="prod-esconder-setas" /> Esconder setas de quantidade</label>
         </div>
 
         <div class="linha-check" style="margin-top:10px;">
@@ -1130,6 +1131,7 @@ function abrirModalProduto(produto) {
     document.getElementById("prod-oferta").checked = produto ? !!produto.oferta : false
     document.getElementById("prod-esgotado").checked = produto ? !!produto.esgotado : false
     document.getElementById("prod-retirada-apenas").checked = produto ? !!produto.retirada_apenas : false
+    document.getElementById("prod-esconder-setas").checked = produto ? !!produto.esconder_setas : false
 
     opcoesProdutoAtual = (produto && produto.opcoes) ? JSON.parse(JSON.stringify(produto.opcoes)) : []
     document.getElementById("prod-tem-opcoes").checked = opcoesProdutoAtual.length > 0
@@ -1179,6 +1181,7 @@ document.getElementById("btn-salvar-produto").addEventListener("click", async ()
         oferta: document.getElementById("prod-oferta").checked,
         esgotado: document.getElementById("prod-esgotado").checked,
         retirada_apenas: document.getElementById("prod-retirada-apenas").checked,
+        esconder_setas: document.getElementById("prod-esconder-setas").checked,
         opcoes: temOpcoes ? opcoesProdutoAtual : null
     }
     if (!id) registro.ordem = produtosAtuais.length // produto novo entra no fim da lista
