@@ -683,7 +683,10 @@ checkoutBtn.addEventListener("click", async function () {
         const linhaOpcoes = item.opcoes && item.opcoes.length
             ? "\n  " + agruparOpcoesPorGrupo(item.opcoes).join("\n  ")
             : ""
-        return `- ${item.name}${linhaOpcoes}\n  Qtd: ${item.quantity} | R$ ${(item.price * item.quantity).toFixed(2).replace(".", ",")}`
+        const produtoRef = produtos.find(p => String(p.id) === String(item.id))
+        const esconderQtd = produtoRef && produtoRef.esconder_setas && item.quantity === 1
+        const linhaQtd = esconderQtd ? "" : `Qtd: ${item.quantity} | `
+        return `- ${item.name}${linhaOpcoes}\n  ${linhaQtd}R$ ${(item.price * item.quantity).toFixed(2).replace(".", ",")}`
     }).join("\n")
 
     const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
