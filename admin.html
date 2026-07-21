@@ -1,0 +1,1867 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>Painel do cardápio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<!-- Fonte estática de reserva (usada se o JS do tema falhar por algum motivo) -->
+<link href="https://fonts.googleapis.com/css2?family=Bitter:wght@600;700;800&family=Mulish:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- ===== SISTEMA DE TEMAS =====
+     Mesmo config-loja.js usado pelo index.html — garante que o painel
+     use as mesmas cores/fontes do site do cliente. -->
+<link id="fontes-tema" rel="stylesheet" href="" />
+<script src="./temas.js"></script>
+<script src="./config-loja.js"></script>
+
+<style>
+    :root{
+        /* Estes valores são apenas RESERVA — na prática são sempre
+           sobrescritos pelo config-loja.js de acordo com o tema
+           escolhido pra este cliente. Não precisa editar aqui. */
+        --tinta:#A9321E; --tinta-escura:#7A2416; --tinta-clara:#F7E4DC;
+        --carvao:#241B16; --creme:#FBF3E4; --linha:#E4D5B7;
+        --ok:#4C6B3F; --erro:#B3261E;
+        --fonte-titulo: 'Bitter', serif;
+        --fonte-texto: 'Mulish', sans-serif;
+    }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:var(--fonte-texto);background:var(--creme);color:var(--carvao);}
+    h1,h2,h3{font-family:var(--fonte-titulo);margin:0;}
+    button{font-family:inherit;cursor:pointer;}
+    input,select,textarea{font-family:inherit;}
+
+    /* ---------- TELA DE LOGIN ---------- */
+    #tela-login{
+        min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+    }
+    .caixa-login{
+        background:white;border:1px solid var(--linha);border-radius:16px;
+        padding:36px 32px;width:100%;max-width:380px;box-shadow:0 8px 30px rgba(36,27,22,0.08);
+    }
+    .caixa-login h1{font-size:24px;margin-bottom:6px;}
+    .caixa-login p{color:#8a7361;font-size:14px;margin:0 0 24px;}
+    .campo{margin-bottom:16px;}
+    .campo label{display:block;font-size:13px;font-weight:700;margin-bottom:6px;}
+    .campo input, .campo select, .campo textarea{
+        width:100%;padding:10px 12px;border:1.5px solid var(--linha);border-radius:8px;font-size:14px;
+    }
+    .campo input:focus, .campo select:focus, .campo textarea:focus{outline:none;border-color:var(--tinta);}
+    .btn-primario{
+        width:100%;background:var(--tinta);color:white;border:none;border-radius:8px;
+        padding:12px;font-weight:700;font-size:15px;transition:background .2s;
+    }
+    .btn-primario:hover{background:var(--tinta-escura);}
+    .btn-primario:disabled{opacity:.6;cursor:not-allowed;}
+    #erro-login{color:var(--erro);font-size:13px;margin-top:12px;display:none;}
+
+    /* ---------- PAINEL ---------- */
+    #tela-painel{display:none;}
+    header.topo{
+        background:var(--carvao);color:white;padding:14px 20px;
+        display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+    }
+    header.topo h1{font-size:18px;color:white;}
+    header.topo .sub{font-size:12px;color:#C9B79E;}
+    #btn-sair{background:none;border:1.5px solid #5a483c;color:#F3E9DA;border-radius:8px;padding:8px 14px;font-size:13px;}
+    #btn-sair:hover{border-color:var(--tinta);}
+
+    .abas{
+    display:flex;gap:6px;padding:14px 16px 0;max-width:1000px;margin:0 auto;
+    flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+    touch-action:none;cursor:grab;user-select:none;
+    }
+    .abas::-webkit-scrollbar{display:none;}
+    .abas.arrastando{ cursor:grabbing; }
+    .aba-btn{
+        background:none;border:none;padding:10px 16px;font-weight:700;font-size:14px;
+        color:#8a7361;border-bottom:3px solid transparent;position:relative;
+        white-space:nowrap;flex-shrink:0;
+    }
+    .aba-btn.ativa{color:var(--tinta);border-color:var(--tinta);}
+    .aba-btn .bolinha{
+        position:absolute;top:6px;right:8px;width:8px;height:8px;border-radius:50%;
+        background:var(--tinta);display:none;
+    }
+    .aba-btn .bolinha.visivel{display:block;}
+
+    main{max-width:1000px;margin:0 auto;padding:20px;}
+    .painel-secao{display:none;}
+    .painel-secao.ativa{display:block;}
+
+    @media(max-width:600px){
+        header.topo{padding:12px 14px;}
+        header.topo h1{font-size:16px;}
+        main{padding:14px;}
+        .card{padding:16px;}
+        .campo input, .campo select, .campo textarea{font-size:16px;} /* evita zoom automático no iOS */
+        .aba-btn{font-size:13px;padding:9px 13px;}
+        .categoria-linha{
+        grid-template-columns:1fr auto;
+        grid-template-areas:
+            "nome nome"
+            "icone icone"
+            "setas apagar";
+    }
+        .item-opcao input.item-opcao-nome,
+        .item-opcao input.item-opcao-preco,
+        .grupo-opcao-linha2 .campo input,
+        .categoria-linha input{font-size:16px;}
+
+        /* área de toque maior pros botões pequenos no celular */
+        .categoria-setas button,
+        .produto-setas button{width:32px;height:28px;}
+        .item-opcao-remover{width:36px;height:36px;}
+        .foto-item .remover-foto{width:26px;height:26px;}
+    }
+
+    @media (max-width: 380px) {
+        .grupo-opcao-linha2 {
+            grid-template-columns: 1fr 1fr !important;
+            row-gap: 10px;
+        }
+        .grupo-opcao-remover {
+            grid-column: 1 / 3;
+            width: 100%;
+            height: 36px;
+        }
+    }
+
+    .card{background:white;border:1px solid var(--linha);border-radius:14px;padding:22px;margin-bottom:18px;}
+    .card h2{font-size:17px;margin-bottom:16px;}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+    @media(max-width:600px){.grid2{grid-template-columns:1fr;}}
+
+    .barra-acoes{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+    .btn-novo{background:var(--ok);color:white;border:none;border-radius:8px;padding:10px 16px;font-weight:700;font-size:14px;}
+    .btn-novo:hover{background:#395530;}
+
+    .produto-linha{
+        display:flex;gap:14px;align-items:center;padding:12px;border:1px solid var(--linha);
+        border-radius:10px;margin-bottom:10px;background:white;
+    }
+    @media(max-width:420px){
+        .produto-linha{gap:10px;padding:10px;}
+        .produto-linha img{width:44px;height:44px;}
+    }
+    .produto-setas{display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+    .produto-setas button{background:none;border:1px solid var(--linha);border-radius:5px;width:24px;height:20px;font-size:10px;color:var(--carvao);}
+    .produto-setas button:hover{border-color:var(--tinta);color:var(--tinta);}
+    .produto-setas button:disabled{opacity:.3;cursor:not-allowed;}
+    .produto-linha img{width:56px;height:56px;border-radius:8px;object-fit:cover;flex-shrink:0;background:#eee;}
+    .produto-linha .info{flex:1;min-width:0;}
+    .produto-linha .info strong{display:block;font-size:14px;}
+    .produto-linha .info span{font-size:12px;color:#8a7361;}
+    .tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;margin-left:6px;}
+    .tag-oferta{background:var(--ok);color:white;}
+    .tag-esgotado{background:#6b7280;color:white;}
+    .tag-retirada{background:#8a5a2b;color:white;}
+    .produto-acoes{display:flex;gap:6px;flex-shrink:0;}
+    .btn-icone{background:none;border:1.5px solid var(--linha);border-radius:8px;width:34px;height:34px;font-size:13px;color:var(--carvao);}
+    .btn-icone:hover{border-color:var(--tinta);color:var(--tinta);}
+    .btn-icone.apagar:hover{border-color:var(--erro);color:var(--erro);}
+
+    /* ===== Cabeçalho de categoria na lista de produtos ===== */
+    .categoria-header{
+        font-size:13px;font-weight:800;color:#8a7361;text-transform:uppercase;
+        letter-spacing:.04em;margin:18px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--linha);
+    }
+    .categoria-header:first-child{margin-top:0;}
+
+    /* ===== Gerenciamento de categorias (aba Dados da loja) ===== */
+    .categoria-linha{
+    display:grid;
+    grid-template-columns:auto 1fr 130px auto;
+    grid-template-areas:"setas nome icone apagar";
+    gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--linha);
+    border-radius:10px;margin-bottom:8px;background:white;
+    }
+    .categoria-linha .categoria-setas{grid-area:setas;}
+    .categoria-linha input:not(.campo-icone){grid-area:nome;}
+    .categoria-linha input.campo-icone{grid-area:icone;}
+    .categoria-linha .apagar{grid-area:apagar;}
+    .categoria-linha input{width:100%;min-width:0;padding:8px 10px;border:1.5px solid var(--linha);border-radius:8px;font-size:13px;}
+    .categoria-setas{display:flex;flex-direction:column;gap:2px;}
+    .categoria-setas button{background:none;border:1px solid var(--linha);border-radius:5px;width:24px;height:20px;font-size:10px;color:var(--carvao);}
+    .categoria-setas button:hover{border-color:var(--tinta);color:var(--tinta);}
+    .categoria-setas button:disabled{opacity:.3;cursor:not-allowed;}
+
+    /* ---------- MODAL DE PRODUTO ---------- */
+    #modal-produto{
+        display:none;position:fixed;inset:0;background:rgba(36,27,22,.6);z-index:200;
+        align-items:center;justify-content:center;padding:16px;
+    }
+    #modal-produto.aberto{display:flex;}
+    .modal-box{background:white;border-radius:14px;padding:24px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;}
+    .modal-box h2{margin-bottom:18px;}
+    .linha-check{display:flex;gap:20px;margin-top:4px;flex-wrap:wrap;}
+    .linha-check label{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;}
+    .modal-acoes{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;}
+    .btn-secundario{background:none;border:1.5px solid var(--linha);border-radius:8px;padding:10px 18px;font-weight:700;font-size:14px;}
+    /* ===== Editor de opções do produto (sabores, adicionais) ===== */
+    .grupo-opcao{
+        border:1.5px solid var(--linha);border-radius:12px;padding:0;margin-top:14px;background:white;overflow:hidden;
+    }
+    .grupo-opcao-cabecalho{
+        background:var(--creme);padding:14px;border-bottom:1.5px solid var(--linha);
+    }
+    .grupo-opcao-topo{margin-bottom:12px;}
+    .grupo-opcao-topo .campo-nome{margin-bottom:10px;}
+    .grupo-opcao-topo .campo-nome label{display:block;font-size:11.5px;font-weight:700;margin-bottom:4px;color:#8a7361;text-transform:uppercase;letter-spacing:.02em;}
+    .grupo-opcao-topo .campo-nome input{width:100%;padding:8px 10px;border:1.5px solid var(--linha);border-radius:8px;font-size:14px;font-weight:700;color:var(--carvao);background:white;}
+    .grupo-opcao-linha2{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;}
+    .grupo-opcao-linha2 .campo{margin-bottom:0;}
+    .grupo-opcao-linha2 .campo label{display:block;font-size:11.5px;font-weight:700;margin-bottom:4px;color:#8a7361;text-transform:uppercase;letter-spacing:.02em;}
+    .grupo-opcao-linha2 .campo input{width:100%;padding:8px 10px;border:1.5px solid var(--linha);border-radius:8px;font-size:13px;background:white;}
+    .grupo-opcao-min{display:none;}
+    .grupo-opcao-min.visivel{display:block;}
+    .grupo-opcao-min-oculto + .grupo-opcao-max-full{grid-column:1 / 3;}
+    .grupo-opcao-topo .campo:first-child input{font-size:14px;font-weight:700;color:var(--carvao);}
+    .grupo-opcao-remover{background:white;border:1.5px solid var(--linha);border-radius:8px;width:36px;height:36px;color:var(--erro);flex-shrink:0;}
+    .grupo-opcao-remover:hover{border-color:var(--erro);background:#FBEAE9;}
+    .grupo-opcao-check{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin:0;}
+    .grupo-opcao-itens{padding:14px;}
+    .grupo-opcao-subtitulo{font-size:11.5px;color:#8a7361;font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin:0 0 10px;}
+    .item-opcao{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+    .item-opcao input.item-opcao-nome{flex:2;padding:8px 10px;border:1.5px solid var(--linha);border-radius:7px;font-size:13px;}
+    .item-opcao-preco-wrap{position:relative;flex:0 0 110px;}
+    .item-opcao-preco-wrap::before{
+        content:"R$";position:absolute;left:10px;top:50%;transform:translateY(-50%);
+        font-size:12px;color:#8a7361;font-weight:700;pointer-events:none;
+    }
+    .item-opcao input.item-opcao-preco{width:100%;padding:8px 10px 8px 30px;border:1.5px solid var(--linha);border-radius:7px;font-size:13px;}
+    .item-opcao-remover{background:none;border:none;color:var(--erro);font-size:14px;width:28px;height:28px;flex-shrink:0;border-radius:6px;}
+    .item-opcao-remover:hover{background:#FBEAE9;}
+    .btn-add-item-opcao{background:none;border:1.5px dashed var(--linha);border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:700;color:#8a7361;width:100%;text-align:center;}
+    .btn-add-item-opcao:hover{border-color:var(--tinta);color:var(--tinta);background:var(--tinta-clara);}
+    .item-opcao-remover{background:none;border:none;color:var(--erro);font-size:13px;width:26px;flex-shrink:0;}
+    .btn-add-item-opcao{background:none;border:1.5px dashed var(--linha);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;color:#8a7361;margin-top:2px;}
+    .btn-add-item-opcao:hover{border-color:var(--tinta);color:var(--tinta);}
+
+    .aviso{font-size:13px;padding:10px 14px;border-radius:8px;margin-bottom:16px;}
+    .aviso-ok{background:#E7EFE2;color:var(--ok);}
+    .aviso-erro{background:#FBEAE9;color:var(--erro);}
+    #salvando-loja{font-size:13px;color:var(--ok);margin-left:10px;display:none;}
+
+    /* ---------- UPLOAD DE IMAGEM ---------- */
+    .upload-area{display:flex;align-items:center;gap:12px;}
+    .preview-img{
+        width:64px;height:64px;border-radius:8px;object-fit:cover;background:#f1e9dd;
+        border:1px solid var(--linha);flex-shrink:0;
+    }
+    .upload-botoes{display:flex;flex-direction:column;gap:6px;}
+    .btn-upload{
+        display:inline-flex;align-items:center;gap:6px;width:auto;padding:8px 14px;
+        font-size:13px;cursor:pointer;
+    }
+    .upload-status{font-size:12px;color:#8a7361;}
+    .upload-status.erro{color:var(--erro);}
+    .upload-status.ok{color:var(--ok);}
+
+    /* ===== Galeria de fotos do produto (múltiplas fotos) ===== */
+    .fotos-galeria{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
+    .foto-item{position:relative;width:64px;height:64px;}
+    .foto-item img{width:100%;height:100%;border-radius:8px;object-fit:cover;border:1px solid var(--linha);background:#f1e9dd;}
+    .foto-item .remover-foto{
+        position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;
+        background:var(--erro);color:white;border:none;font-size:11px;line-height:1;cursor:pointer;
+        display:flex;align-items:center;justify-content:center;
+    }
+
+    /* ===== Mesas / comandas ===== */
+    .mesa-card{background:white;border:1px solid var(--linha);border-radius:14px;padding:20px;margin-bottom:16px;}
+    .mesa-card h2{font-size:17px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+    .mesa-total{color:var(--tinta);}
+    .pedido-bloco{margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--linha);}
+    .pedido-bloco:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+    .pedido-cabeca{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+    .pedido-hora{font-size:12px;color:#8a7361;}
+    .pedido-item{font-size:13px;}
+    .btn-cancelar-pedido{
+        background:none;border:1.5px solid var(--linha);border-radius:6px;
+        padding:3px 9px;font-size:11px;font-weight:700;color:#8a7361;
+    }
+    .btn-cancelar-pedido:hover{border-color:var(--erro);color:var(--erro);}
+    .mesa-acoes{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
+    .btn-mesa-finalizar{background:var(--ok);color:white;border:none;border-radius:8px;padding:10px 18px;font-weight:700;font-size:14px;}
+    .btn-mesa-finalizar:hover{background:#395530;}
+
+    /* ===== Histórico de comandas ===== */
+    .historico-card{background:white;border:1px solid var(--linha);border-radius:14px;padding:18px;margin-bottom:14px;}
+    .historico-topo{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+    .historico-topo .mesa-nome{font-weight:800;font-size:15px;}
+    .historico-topo .data-hora{font-size:12px;color:#8a7361;}
+    .historico-topo .total{color:var(--tinta);font-weight:800;font-size:15px;}
+    .historico-texto{
+        white-space:pre-wrap;background:var(--creme);border:1px solid var(--linha);border-radius:8px;
+        padding:12px 14px;font-size:13px;line-height:1.5;margin-bottom:12px;font-family:var(--fonte-texto);
+    }
+    .historico-acoes{display:flex;gap:8px;flex-wrap:wrap;}
+    .btn-historico{
+        border:none;border-radius:8px;padding:8px 14px;font-weight:700;font-size:12.5px;
+        display:inline-flex;align-items:center;gap:6px;
+    }
+    .btn-reenviar{background:#25D366;color:white;}
+    .btn-reenviar:hover{background:#1fb956;}
+    .btn-copiar{background:none;border:1.5px solid var(--linha);color:var(--carvao);}
+    .btn-copiar:hover{border-color:var(--tinta);color:var(--tinta);}
+
+    /* ===== Dashboard ===== */
+    .dash-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px;}
+    @media(max-width:700px){.dash-cards{grid-template-columns:1fr;}}
+    .dash-card{background:white;border:1px solid var(--linha);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:6px;}
+    .dash-label{font-size:12.5px;color:#8a7361;font-weight:700;text-transform:uppercase;letter-spacing:.03em;}
+    .dash-valor{font-size:26px;font-weight:800;color:var(--tinta);}
+    .dash-valor-texto{font-size:16px;}
+</style>
+</head>
+<body>
+
+<!-- ==================== TELA DE LOGIN ==================== -->
+<div id="tela-login">
+    <div class="caixa-login">
+        <h1>Painel do cardápio</h1>
+        <p>Entre com o e-mail e senha da sua loja</p>
+        <div class="campo">
+            <label>E-mail</label>
+            <input type="email" id="login-email" placeholder="voce@email.com" />
+        </div>
+        <div class="campo">
+            <label>Senha</label>
+            <input type="password" id="login-senha" placeholder="••••••••" />
+        </div>
+        <button class="btn-primario" id="btn-entrar">Entrar</button>
+        <p id="erro-login"></p>
+    </div>
+</div>
+
+<!-- ==================== PAINEL (após login) ==================== -->
+<div id="tela-painel">
+    <header class="topo">
+        <div>
+            <h1 id="painel-nome-loja">Minha loja</h1>
+            <div class="sub" id="painel-email-usuario"></div>
+        </div>
+        <button id="btn-sair">Sair</button>
+    </header>
+
+    <div class="abas">
+        <button class="aba-btn ativa" data-aba="mesas">Mesas <span class="bolinha" id="bolinha-mesas"></span></button>
+        <button class="aba-btn" data-aba="historico-mesa">Histórico Mesa</button>
+        <button class="aba-btn" data-aba="historico-delivery">Histórico Delivery <span class="bolinha" id="bolinha-historico-delivery"></span></button>
+        <button class="aba-btn" data-aba="produtos">Produtos</button>
+        <button class="aba-btn" data-aba="loja">Dados da loja</button>
+        <button class="aba-btn" data-aba="dashboard">Dashboard</button>
+    </div>
+
+    <main>
+        <!-- ===== ABA MESAS ===== -->
+        <section class="painel-secao ativa" id="secao-mesas">
+            <div id="msg-mesas"></div>
+            <div id="lista-mesas"></div>
+        </section>
+
+        <!-- ===== ABA HISTÓRICO MESA ===== -->
+        <section class="painel-secao" id="secao-historico-mesa">
+            <p style="font-size:13px;color:#8a7361;margin:0 0 14px;">As 30 comandas de mesa mais recentes ficam guardadas por loja. O texto de cada uma é o exato que foi enviado ao WhatsApp no momento da finalização.</p>
+            <div id="msg-historico-mesa"></div>
+            <div id="lista-historico-mesa"></div>
+        </section>
+
+        <!-- ===== ABA HISTÓRICO DELIVERY ===== -->
+        <section class="painel-secao" id="secao-historico-delivery">
+            <p style="font-size:13px;color:#8a7361;margin:0 0 14px;">Os 30 pedidos de delivery/retirada mais recentes ficam guardados por loja. O texto de cada um é o exato que foi enviado ao WhatsApp no momento do pedido.</p>
+            <div id="msg-historico-delivery"></div>
+            <div id="lista-historico-delivery"></div>
+        </section>
+
+        <!-- ===== ABA PRODUTOS ===== -->
+        <section class="painel-secao" id="secao-produtos">
+            <div class="barra-acoes">
+                <div id="msg-produtos"></div>
+                <input type="text" id="busca-produtos" placeholder="Buscar produto..." style="padding:8px 12px;border:1.5px solid var(--linha);border-radius:8px;font-size:13px;min-width:180px;" />
+                <button class="btn-novo" id="btn-novo-produto"><i class="fa fa-plus"></i> Novo produto</button>
+            </div>
+            <div id="lista-produtos"></div>
+        </section>
+
+        <!-- ===== ABA DADOS DA LOJA ===== -->
+        <section class="painel-secao" id="secao-loja">
+            <div class="card">
+                <h2>Identidade</h2>
+                <div id="msg-loja"></div>
+                <div class="grid2">
+                    <div class="campo"><label>Nome da loja</label><input id="loja-nome" /></div>
+                    <div class="campo"><label>WhatsApp (só números, com DDD)</label><input id="loja-whatsapp" placeholder="91991396925" /></div>
+                    <div class="campo"><label>Frase de efeito (tagline)</label><input id="loja-tagline" /></div>
+                    <div class="campo"><label>Endereço</label><input id="loja-endereco" /></div>
+                    <div class="campo"><label>Título da seção do cardápio</label><input id="loja-titulo-menu" /></div>
+                    <div class="campo"><label>Texto do horário (exibido no site)</label><input id="loja-texto-horario" /></div>
+                </div>
+                <div class="grid2">
+                    <div class="campo">
+                        <label>Logo</label>
+                        <div class="upload-area">
+                            <img id="loja-logo-preview" class="preview-img" />
+                            <div class="upload-botoes">
+                                <label class="btn-secundario btn-upload" for="loja-logo-arquivo"><i class="fa fa-upload"></i> Trocar logo</label>
+                                <input type="file" id="loja-logo-arquivo" accept="image/*" style="display:none" />
+                                <span id="loja-logo-status" class="upload-status"></span>
+                            </div>
+                        </div>
+                        <input type="hidden" id="loja-logo" />
+                    </div>
+                    <div class="campo">
+                        <label>Banner</label>
+                        <div class="upload-area">
+                            <img id="loja-banner-preview" class="preview-img" />
+                            <div class="upload-botoes">
+                                <label class="btn-secundario btn-upload" for="loja-banner-arquivo"><i class="fa fa-upload"></i> Trocar banner</label>
+                                <input type="file" id="loja-banner-arquivo" accept="image/*" style="display:none" />
+                                <span id="loja-banner-status" class="upload-status"></span>
+                            </div>
+                        </div>
+                        <input type="hidden" id="loja-banner" />
+                    </div>
+                </div>
+                <div class="grid2">
+                    <div class="campo">
+                        <label>
+                            <input type="checkbox" id="loja-usar-cor-personalizada" style="width:auto;margin-right:6px;" />
+                            Usar cor personalizada (senão, usa a cor do tema)
+                        </label>
+                        <input type="color" id="loja-cor" style="margin-top:8px;" />
+                    </div>
+                    <div class="campo"><label>Loja ativa (aparece no site)</label>
+                        <select id="loja-ativa"><option value="true">Sim</option><option value="false">Não</option></select>
+                    </div>
+                </div>
+                <button class="btn-primario" id="btn-salvar-loja" style="width:auto;padding:10px 22px;">Salvar alterações</button>
+                <span id="salvando-loja">Salvo ✓</span>
+            </div>
+
+            <!-- ===== Categorias do cardápio (ordem usada no site e no admin) ===== -->
+            <div class="card">
+                <h2>Categorias do cardápio</h2>
+                <p style="font-size:13px;color:#8a7361;margin:-8px 0 14px;">Use as setas pra reordenar — é essa ordem que aparece no site e na lista de produtos.</p>
+                <div id="msg-categorias"></div>
+                <div id="lista-categorias"></div>
+                <button class="btn-novo" id="btn-nova-categoria" style="margin-top:10px;"><i class="fa fa-plus"></i> Nova categoria</button>
+                <div style="margin-top:16px;">
+                    <button class="btn-primario" id="btn-salvar-categorias" style="width:auto;padding:10px 22px;">Salvar categorias</button>
+                    <span id="salvando-categorias" style="font-size:13px;color:var(--ok);margin-left:10px;display:none;">Salvo ✓</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== ABA DASHBOARD ===== -->
+        <section class="painel-secao" id="secao-dashboard">
+            <div id="msg-dashboard"></div>
+            <div class="dash-cards">
+                <div class="dash-card">
+                    <span class="dash-label">Vendas hoje</span>
+                    <span class="dash-valor" id="dash-vendas-hoje">R$ 0,00</span>
+                </div>
+                <div class="dash-card">
+                    <span class="dash-label">Pedidos hoje</span>
+                    <span class="dash-valor" id="dash-pedidos-hoje">0</span>
+                </div>
+                <div class="dash-card">
+                    <span class="dash-label">Mais vendido hoje</span>
+                    <span class="dash-valor dash-valor-texto" id="dash-top-produto">—</span>
+                </div>
+            </div>
+            <button class="btn-novo" id="btn-baixar-relatorio"><i class="fa fa-download"></i> Baixar relatório do dia</button>
+        </section>
+    </main>
+</div>
+
+<!-- ==================== MODAL: CRIAR/EDITAR PRODUTO ==================== -->
+<div id="modal-produto">
+    <div class="modal-box">
+        <h2 id="modal-titulo">Novo produto</h2>
+        <input type="hidden" id="prod-id" />
+        <div class="campo"><label>Nome</label><input id="prod-nome" /></div>
+        <div class="campo"><label>Categoria</label><input id="prod-categoria" placeholder="Ex: Pizzas Tradicionais" /></div>
+        <div class="campo"><label>Descrição</label><textarea id="prod-desc" rows="2"></textarea></div>
+        <div class="campo"><label>Preço (R$)</label><input type="number" step="0.01" id="prod-preco" /></div>
+        <div class="campo"><label>Estoque (deixe em branco pra não controlar)</label><input type="number" step="1" min="0" id="prod-estoque" placeholder="Ex: 20" /></div>
+        <div class="campo">
+            <label>Fotos do produto</label>
+            <div id="prod-fotos-galeria" class="fotos-galeria"></div>
+            <div class="upload-botoes">
+                <label class="btn-secundario btn-upload" for="prod-fotos-arquivo"><i class="fa fa-upload"></i> Adicionar foto(s)</label>
+                <input type="file" id="prod-fotos-arquivo" accept="image/*" multiple style="display:none" />
+                <span id="prod-fotos-status" class="upload-status"></span>
+            </div>
+        </div>
+        <div class="linha-check">
+            <label><input type="checkbox" id="prod-oferta" /> Em oferta</label>
+            <label><input type="checkbox" id="prod-esgotado" /> Esgotado</label>
+            <label><input type="checkbox" id="prod-retirada-apenas" /> Só retirada</label>
+        </div>
+
+        <div class="linha-check" style="margin-top:10px;">
+            <label><input type="checkbox" id="prod-tem-opcoes" /> Este produto tem opções (sabores, adicionais etc.)</label>
+        </div>
+
+        <div id="opcoes-editor" style="display:none;">
+            <div id="opcoes-grupos-lista"></div>
+            <button type="button" class="btn-secundario" id="btn-novo-grupo-opcao" style="margin-top:8px;">
+                <i class="fa fa-plus"></i> Novo grupo de opções
+            </button>
+        </div>
+
+        <div class="modal-acoes">
+            <button class="btn-secundario" id="btn-cancelar-produto">Cancelar</button>
+            <button class="btn-primario" id="btn-salvar-produto" style="width:auto;padding:10px 20px;">Salvar produto</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIG — igual ao supabase-loader.js do site público
+// ============================================================
+const SUPABASE_URL = "https://bjnnkeutfilbzdhbqqij.supabase.co"
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqbm5rZXV0ZmlsYnpkaGJxcWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3OTU0MzIsImV4cCI6MjA5OTM3MTQzMn0.kyj-JDRj4YAwlgGze56MGsd9UjezpF1PeG-HpJnm3_I"
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+let lojaAtual = null   // registro da loja do usuário logado
+let produtosAtuais = []
+let categoriasAtuais = []
+let canalMesasInscrito = false
+
+// ============================================================
+// UPLOAD DE IMAGEM (Supabase Storage, bucket "midia")
+// ============================================================
+async function subirImagem(file, prefixo) {
+    if (!file) return null
+    if (!file.type.startsWith("image/")) {
+        throw new Error("Escolha um arquivo de imagem (jpg, png, webp...)")
+    }
+    if (file.size > 5 * 1024 * 1024) {
+        throw new Error("Imagem muito grande (máximo 5MB)")
+    }
+
+    const extensao = file.name.split(".").pop().toLowerCase()
+    const nomeArquivo = `${prefixo}-${Date.now()}.${extensao}`
+    const caminho = `${lojaAtual.id}/${nomeArquivo}`
+
+    const { error } = await sb.storage.from("midia").upload(caminho, file, { upsert: true })
+    if (error) throw error
+
+    const { data } = sb.storage.from("midia").getPublicUrl(caminho)
+    return data.publicUrl
+}
+
+// Liga um <input type=file> a um preview + campo escondido de URL,
+// fazendo o upload assim que o usuário escolhe uma imagem.
+function conectarUpload(inputId, statusId, previewId, hiddenId, prefixo) {
+    document.getElementById(inputId).addEventListener("change", async (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+
+        const status = document.getElementById(statusId)
+        status.className = "upload-status"
+        status.textContent = "Enviando..."
+
+        try {
+            const url = await subirImagem(file, prefixo)
+            document.getElementById(hiddenId).value = url
+            document.getElementById(previewId).src = url
+            status.textContent = "Enviado ✓"
+            status.className = "upload-status ok"
+        } catch (err) {
+            status.textContent = "Erro: " + err.message
+            status.className = "upload-status erro"
+        }
+    })
+}
+
+conectarUpload("loja-logo-arquivo", "loja-logo-status", "loja-logo-preview", "loja-logo", "logo")
+conectarUpload("loja-banner-arquivo", "loja-banner-status", "loja-banner-preview", "loja-banner", "banner")
+
+// ============================================================
+// UPLOAD DE MÚLTIPLAS FOTOS DO PRODUTO
+// ============================================================
+let fotosProdutoAtual = []
+
+document.getElementById("prod-fotos-arquivo").addEventListener("change", async (e) => {
+    const files = Array.from(e.target.files)
+    if (!files.length) return
+    const status = document.getElementById("prod-fotos-status")
+    status.className = "upload-status"
+    for (const file of files) {
+        status.textContent = `Enviando ${file.name}...`
+        try {
+            const url = await subirImagem(file, "produto")
+            fotosProdutoAtual.push(url)
+            renderGaleriaFotos()
+        } catch (err) {
+            status.textContent = "Erro: " + err.message
+            status.className = "upload-status erro"
+            return
+        }
+    }
+    status.textContent = "Enviado ✓"
+    status.className = "upload-status ok"
+    e.target.value = ""
+})
+
+function renderGaleriaFotos() {
+    const galeria = document.getElementById("prod-fotos-galeria")
+    galeria.innerHTML = ""
+    fotosProdutoAtual.forEach((url, i) => {
+        const item = document.createElement("div")
+        item.className = "foto-item"
+        item.innerHTML = `
+            <img src="${url}" />
+            <button type="button" class="remover-foto" title="Remover" onclick="removerFotoProduto(${i})">×</button>
+        `
+        galeria.appendChild(item)
+    })
+}
+
+function removerFotoProduto(i) {
+    fotosProdutoAtual.splice(i, 1)
+    renderGaleriaFotos()
+}
+
+// ============================================================
+// EDITOR DE OPÇÕES DO PRODUTO (sabores, adicionais etc.)
+// Formato salvo em produtos.opcoes:
+// [{ nome, obrigatorio, min, max, itens: [{ nome, preco_adicional }] }]
+// ============================================================
+let opcoesProdutoAtual = []
+
+document.getElementById("prod-tem-opcoes").addEventListener("change", (e) => {
+    document.getElementById("opcoes-editor").style.display = e.target.checked ? "block" : "none"
+})
+
+document.getElementById("btn-novo-grupo-opcao").addEventListener("click", () => {
+    opcoesProdutoAtual.push({
+        nome: "",
+        obrigatorio: false,
+        min: 0,
+        max: 1,
+        itens: [{ nome: "", preco_adicional: 0 }]
+    })
+    renderizarOpcoesEditor()
+})
+
+function renderizarOpcoesEditor() {
+    const lista = document.getElementById("opcoes-grupos-lista")
+    lista.innerHTML = ""
+
+    opcoesProdutoAtual.forEach((grupo, gi) => {
+        const div = document.createElement("div")
+        div.className = "grupo-opcao"
+        div.innerHTML = `
+            <div class="grupo-opcao-cabecalho">
+                <div class="grupo-opcao-topo">
+                    <div class="campo-nome">
+                        <label>Nome do grupo (aparece pro cliente)</label>
+                        <input type="text" value="${grupo.nome || ""}" placeholder="Ex: Sabores" oninput="opcoesProdutoAtual[${gi}].nome = this.value" />
+                    </div>
+                    <div class="grupo-opcao-linha2">
+                        <div class="campo grupo-opcao-min${grupo.obrigatorio ? " visivel" : ""}" id="campo-min-${gi}">
+                            <label>Mín. obrigatório</label>
+                            <input type="number" min="1" value="${grupo.min || 1}" oninput="opcoesProdutoAtual[${gi}].min = parseInt(this.value)||1" />
+                        </div>
+                        <div class="campo">
+                            <label>Máx. de seleções</label>
+                            <input type="number" min="1" value="${grupo.max}" oninput="alternarMaxOpcao(${gi}, this.value)" />
+                        </div>
+                        <button type="button" class="grupo-opcao-remover" title="Remover grupo" onclick="removerGrupoOpcao(${gi})"><i class="fa fa-trash"></i></button>
+                    </div>
+                </div>
+                <label class="grupo-opcao-check">
+                    <input type="checkbox" ${grupo.obrigatorio ? "checked" : ""} onchange="alternarObrigatorio(${gi}, this.checked)" />
+                    Obrigatório (cliente precisa escolher pra adicionar ao carrinho)
+                </label>
+            </div>
+            <div class="grupo-opcao-itens">
+                <p class="grupo-opcao-subtitulo">Itens deste grupo</p>
+                <div id="itens-grupo-${gi}"></div>
+                <button type="button" class="btn-add-item-opcao" onclick="adicionarItemOpcao(${gi})"><i class="fa fa-plus"></i> Adicionar item</button>
+            </div>
+        `
+        lista.appendChild(div)
+
+        atualizarVisibilidadeMin(gi)
+
+        renderizarItensGrupo(gi)
+    })
+}
+
+function renderizarItensGrupo(gi) {
+    const container = document.getElementById(`itens-grupo-${gi}`)
+    const grupo = opcoesProdutoAtual[gi]
+    container.innerHTML = ""
+
+    grupo.itens.forEach((item, ii) => {
+        const linha = document.createElement("div")
+        linha.className = "item-opcao"
+        linha.innerHTML = `
+            <input type="text" class="item-opcao-nome" value="${item.nome || ""}" placeholder="Nome do item (ex: Ninho)" oninput="opcoesProdutoAtual[${gi}].itens[${ii}].nome = this.value" />
+            <div class="item-opcao-preco-wrap">
+                <input type="number" class="item-opcao-preco" step="0.01" min="0" value="${item.preco_adicional || 0}" placeholder="0,00" oninput="opcoesProdutoAtual[${gi}].itens[${ii}].preco_adicional = parseFloat(this.value)||0" />
+            </div>
+            <button type="button" class="item-opcao-remover" title="Remover" onclick="removerItemOpcao(${gi}, ${ii})"><i class="fa fa-xmark"></i></button>
+        `
+        container.appendChild(linha)
+    })
+}
+
+function adicionarItemOpcao(gi) {
+    opcoesProdutoAtual[gi].itens.push({ nome: "", preco_adicional: 0 })
+    renderizarItensGrupo(gi)
+}
+
+function removerItemOpcao(gi, ii) {
+    opcoesProdutoAtual[gi].itens.splice(ii, 1)
+    renderizarItensGrupo(gi)
+}
+
+function removerGrupoOpcao(gi) {
+    opcoesProdutoAtual.splice(gi, 1)
+    renderizarOpcoesEditor()
+}
+
+function alternarObrigatorio(gi, marcado) {
+    opcoesProdutoAtual[gi].obrigatorio = marcado
+    opcoesProdutoAtual[gi].min = marcado ? (opcoesProdutoAtual[gi].min || 1) : 0
+    document.getElementById(`campo-min-${gi}`).querySelector("input").value = opcoesProdutoAtual[gi].min
+    atualizarVisibilidadeMin(gi)
+}
+
+function alternarMaxOpcao(gi, valor) {
+    opcoesProdutoAtual[gi].max = parseInt(valor) || 1
+    atualizarVisibilidadeMin(gi)
+}
+
+function atualizarVisibilidadeMin(gi) {
+    const grupo = opcoesProdutoAtual[gi]
+    const campoMin = document.getElementById(`campo-min-${gi}`)
+    const mostrarMin = grupo.obrigatorio && grupo.max > 1
+
+    campoMin.classList.toggle("visivel", mostrarMin)
+
+    const linha2 = campoMin.closest(".grupo-opcao-linha2")
+    linha2.style.gridTemplateColumns = mostrarMin ? "1fr 1fr auto" : "1fr auto"
+}
+
+// ============================================================
+// LOGIN
+// ============================================================
+const telaLogin = document.getElementById("tela-login")
+const telaPainel = document.getElementById("tela-painel")
+const erroLogin = document.getElementById("erro-login")
+
+document.getElementById("btn-entrar").addEventListener("click", fazerLogin)
+document.getElementById("login-senha").addEventListener("keydown", e => { if (e.key === "Enter") fazerLogin() })
+
+async function fazerLogin() {
+    const email = document.getElementById("login-email").value.trim()
+    const senha = document.getElementById("login-senha").value
+    const btn = document.getElementById("btn-entrar")
+
+    if (!email || !senha) return
+
+    btn.disabled = true
+    btn.textContent = "Entrando..."
+    erroLogin.style.display = "none"
+
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: senha })
+
+    btn.disabled = false
+    btn.textContent = "Entrar"
+
+    if (error) {
+        erroLogin.textContent = "E-mail ou senha incorretos."
+        erroLogin.style.display = "block"
+        return
+    }
+
+    await iniciarPainel(data.user)
+}
+
+document.getElementById("btn-sair").addEventListener("click", async () => {
+    await sb.auth.signOut()
+    location.reload()
+})
+
+// Se já tiver sessão salva no navegador, entra direto
+sb.auth.getSession().then(({ data }) => {
+    if (data.session) iniciarPainel(data.session.user)
+})
+
+// ============================================================
+// CARREGAR LOJA DO USUÁRIO LOGADO
+// ============================================================
+async function iniciarPainel(user) {
+    const { data: lojaDb, error } = await sb
+        .from("lojas")
+        .select("*")
+        .eq("owner_user_id", user.id)
+        .single()
+
+    if (error || !lojaDb) {
+        erroLogin.textContent = "Este login não está vinculado a nenhuma loja. Fale com o suporte."
+        erroLogin.style.display = "block"
+        return
+    }
+
+    lojaAtual = lojaDb
+
+    telaLogin.style.display = "none"
+    telaPainel.style.display = "block"
+    document.getElementById("painel-nome-loja").textContent = lojaAtual.nome
+    document.getElementById("painel-email-usuario").textContent = user.email
+
+    preencherFormularioLoja()
+    await carregarDashboard()
+    await carregarProdutos()
+    await carregarMesas()
+    inscreverAtualizacoesMesas()
+    inscreverAtualizacoesHistoricoDelivery()
+}
+
+// ============================================================
+// ABAS
+// ============================================================
+document.querySelectorAll(".aba-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".aba-btn").forEach(b => b.classList.remove("ativa"))
+        document.querySelectorAll(".painel-secao").forEach(s => s.classList.remove("ativa"))
+        btn.classList.add("ativa")
+        document.getElementById("secao-" + btn.dataset.aba).classList.add("ativa")
+        if (btn.dataset.aba === "dashboard") {
+            carregarDashboard()
+        }
+        if (btn.dataset.aba === "mesas") {
+            carregarMesas()
+            document.getElementById("bolinha-mesas").classList.remove("visivel")
+        }
+        if (btn.dataset.aba === "historico-mesa") {
+            carregarHistoricoMesa()
+        }
+        if (btn.dataset.aba === "historico-delivery") {
+            carregarHistoricoDelivery()
+            document.getElementById("bolinha-historico-delivery").classList.remove("visivel")
+        }
+    })
+})
+
+// ============================================================
+// ABA "DADOS DA LOJA"
+// ============================================================
+function preencherFormularioLoja() {
+    document.getElementById("loja-nome").value = lojaAtual.nome || ""
+    document.getElementById("loja-whatsapp").value = lojaAtual.whatsapp || ""
+    document.getElementById("loja-tagline").value = lojaAtual.tagline || ""
+    document.getElementById("loja-endereco").value = lojaAtual.endereco || ""
+    document.getElementById("loja-titulo-menu").value = lojaAtual.titulo_secao_menu || ""
+    document.getElementById("loja-texto-horario").value = lojaAtual.texto_horario || ""
+    document.getElementById("loja-logo").value = lojaAtual.logo_url || ""
+    document.getElementById("loja-banner").value = lojaAtual.banner_url || ""
+    document.getElementById("loja-logo-preview").src = lojaAtual.logo_url || ""
+    document.getElementById("loja-banner-preview").src = lojaAtual.banner_url || ""
+    document.getElementById("loja-logo-status").textContent = ""
+    document.getElementById("loja-banner-status").textContent = ""
+    const usaCorPersonalizada = !!lojaAtual.cor_principal
+    document.getElementById("loja-usar-cor-personalizada").checked = usaCorPersonalizada
+    document.getElementById("loja-cor").value = lojaAtual.cor_principal || (window.TEMA_ATUAL && window.TEMA_ATUAL.cores.principal) || "#A9321E"
+    document.getElementById("loja-cor").disabled = !usaCorPersonalizada
+    document.getElementById("loja-ativa").value = String(lojaAtual.ativa)
+    document.getElementById("loja-usar-cor-personalizada").addEventListener("change", (e) => {
+    document.getElementById("loja-cor").disabled = !e.target.checked
+    })
+    categoriasAtuais = (lojaAtual.categorias || []).map(c => ({ ...c })).sort((a, b) => a.ordem - b.ordem)
+    renderizarCategorias()
+}
+
+document.getElementById("btn-salvar-loja").addEventListener("click", async () => {
+    const msg = document.getElementById("msg-loja")
+    msg.innerHTML = ""
+
+    const atualizacao = {
+        nome: document.getElementById("loja-nome").value.trim(),
+        whatsapp: document.getElementById("loja-whatsapp").value.trim(),
+        tagline: document.getElementById("loja-tagline").value.trim(),
+        endereco: document.getElementById("loja-endereco").value.trim(),
+        titulo_secao_menu: document.getElementById("loja-titulo-menu").value.trim(),
+        texto_horario: document.getElementById("loja-texto-horario").value.trim(),
+        logo_url: document.getElementById("loja-logo").value.trim(),
+        banner_url: document.getElementById("loja-banner").value.trim(),
+        cor_principal: document.getElementById("loja-usar-cor-personalizada").checked
+            ? document.getElementById("loja-cor").value
+            : null,
+        ativa: document.getElementById("loja-ativa").value === "true"
+    }
+
+    const { error } = await sb.from("lojas").update(atualizacao).eq("id", lojaAtual.id)
+
+    if (error) {
+        msg.innerHTML = `<div class="aviso aviso-erro">Não foi possível salvar: ${error.message}</div>`
+        return
+    }
+
+    lojaAtual = { ...lojaAtual, ...atualizacao }
+    document.getElementById("painel-nome-loja").textContent = lojaAtual.nome
+    const selo = document.getElementById("salvando-loja")
+    selo.style.display = "inline"
+    setTimeout(() => selo.style.display = "none", 2000)
+})
+
+// ============================================================
+// ABA "DADOS DA LOJA" — Categorias do cardápio
+// (define a ordem usada tanto no site público quanto aqui no
+// admin, na lista de produtos)
+// ============================================================
+function renderizarCategorias() {
+    const lista = document.getElementById("lista-categorias")
+    lista.innerHTML = ""
+
+    if (!categoriasAtuais.length) {
+        lista.innerHTML = `<p style="color:#8a7361;font-size:14px;">Nenhuma categoria cadastrada ainda.</p>`
+        return
+    }
+
+    categoriasAtuais.forEach((cat, i) => {
+        const linha = document.createElement("div")
+        linha.className = "categoria-linha"
+        linha.innerHTML = `
+            <div class="categoria-setas">
+                <button type="button" title="Subir" ${i === 0 ? "disabled" : ""} onclick="moverCategoria(${i}, -1)"><i class="fa fa-chevron-up"></i></button>
+                <button type="button" title="Descer" ${i === categoriasAtuais.length - 1 ? "disabled" : ""} onclick="moverCategoria(${i}, 1)"><i class="fa fa-chevron-down"></i></button>
+            </div>
+            <input type="text" value="${cat.nome || ""}" placeholder="Nome da categoria" oninput="categoriasAtuais[${i}].nome = this.value" />
+            <input type="text" class="campo-icone" value="${cat.icone || ""}" placeholder="fa-fire (ícone)" oninput="categoriasAtuais[${i}].icone = this.value" />
+            <button type="button" class="btn-icone apagar" title="Remover" onclick="removerCategoria(${i})"><i class="fa fa-trash"></i></button>
+        `
+        lista.appendChild(linha)
+    })
+}
+
+function moverCategoria(i, direcao) {
+    const j = i + direcao
+    if (j < 0 || j >= categoriasAtuais.length) return
+    ;[categoriasAtuais[i], categoriasAtuais[j]] = [categoriasAtuais[j], categoriasAtuais[i]]
+    renderizarCategorias()
+}
+
+function removerCategoria(i) {
+    categoriasAtuais.splice(i, 1)
+    renderizarCategorias()
+}
+
+document.getElementById("btn-nova-categoria").addEventListener("click", () => {
+    categoriasAtuais.push({ nome: "", icone: "", ordem: categoriasAtuais.length })
+    renderizarCategorias()
+})
+
+document.getElementById("btn-salvar-categorias").addEventListener("click", async () => {
+    const msg = document.getElementById("msg-categorias")
+    msg.innerHTML = ""
+
+    if (categoriasAtuais.some(c => !c.nome.trim())) {
+        msg.innerHTML = `<div class="aviso aviso-erro">Preencha o nome de todas as categorias.</div>`
+        return
+    }
+
+    const categoriasParaSalvar = categoriasAtuais.map((c, i) => ({
+        nome: c.nome.trim(),
+        icone: (c.icone || "").trim(),
+        ordem: i
+    }))
+
+    const { error } = await sb.from("lojas").update({ categorias: categoriasParaSalvar }).eq("id", lojaAtual.id)
+
+    if (error) {
+        msg.innerHTML = `<div class="aviso aviso-erro">Não foi possível salvar: ${error.message}</div>`
+        return
+    }
+
+    lojaAtual.categorias = categoriasParaSalvar
+    categoriasAtuais = categoriasParaSalvar.map(c => ({ ...c }))
+    renderizarCategorias()
+    renderizarListaProdutos() // reflete a nova ordem na lista de produtos também
+
+    const selo = document.getElementById("salvando-categorias")
+    selo.style.display = "inline"
+    setTimeout(() => selo.style.display = "none", 2000)
+})
+
+// ============================================================
+// ABA "PRODUTOS"
+// ============================================================
+async function carregarProdutos() {
+    const { data, error } = await sb
+        .from("produtos")
+        .select("*")
+        .eq("loja_id", lojaAtual.id)
+        .order("ordem", { ascending: true })
+
+    const msg = document.getElementById("msg-produtos")
+    if (error) {
+        msg.innerHTML = `<div class="aviso aviso-erro">Erro ao carregar produtos.</div>`
+        return
+    }
+
+    produtosAtuais = ordenarProdutosPorCategoria(data || [])
+    renderizarListaProdutos()
+}
+
+// Usa a mesma ordem de categorias definida em lojaAtual.categorias
+// (a que o site público usa), em vez de ordem alfabética. Categorias
+// não declaradas ali vão pro final, em ordem alfabética.
+function ordenarProdutosPorCategoria(lista) {
+    const ordemCategoria = {}
+    ;(lojaAtual.categorias || []).forEach(c => { ordemCategoria[c.nome] = c.ordem })
+
+    return [...lista].sort((a, b) => {
+        const ordemA = ordemCategoria[a.categoria] ?? 9999
+        const ordemB = ordemCategoria[b.categoria] ?? 9999
+        if (ordemA !== ordemB) return ordemA - ordemB
+        return a.categoria.localeCompare(b.categoria)
+    })
+}
+
+function renderizarListaProdutos() {
+    const lista = document.getElementById("lista-produtos")
+    lista.innerHTML = ""
+
+    const termo = (document.getElementById("busca-produtos")?.value || "").trim().toLowerCase()
+    const produtosFiltrados = termo
+        ? produtosAtuais.filter(p => p.nome.toLowerCase().includes(termo) || p.categoria.toLowerCase().includes(termo))
+        : produtosAtuais
+
+    if (produtosFiltrados.length === 0) {
+        lista.innerHTML = `<p style="color:#8a7361;font-size:14px;">${termo ? "Nenhum produto encontrado." : 'Nenhum produto cadastrado ainda. Clique em "Novo produto" pra começar.'}</p>`
+        return
+    }
+
+    let categoriaAtual = null
+    produtosFiltrados.forEach((p, i) => {
+        if (p.categoria !== categoriaAtual) {
+            categoriaAtual = p.categoria
+            const header = document.createElement("div")
+            header.className = "categoria-header"
+            header.textContent = categoriaAtual
+            lista.appendChild(header)
+        }
+
+        const semBusca = !termo
+        const primeiroDaCategoria = i === 0 || produtosFiltrados[i - 1].categoria !== p.categoria
+        const ultimoDaCategoria = i === produtosFiltrados.length - 1 || produtosFiltrados[i + 1].categoria !== p.categoria
+
+        const linha = document.createElement("div")
+        linha.className = "produto-linha"
+        linha.innerHTML = `
+            ${semBusca ? `
+            <div class="produto-setas">
+                <button type="button" title="Subir" ${primeiroDaCategoria ? "disabled" : ""} onclick="moverProduto('${p.id}', -1)"><i class="fa fa-chevron-up"></i></button>
+                <button type="button" title="Descer" ${ultimoDaCategoria ? "disabled" : ""} onclick="moverProduto('${p.id}', 1)"><i class="fa fa-chevron-down"></i></button>
+            </div>` : ""}
+            <img src="${(p.fotos && p.fotos[0]) || ''}" onerror="this.style.background='#eee'" />
+            <div class="info">
+                <strong>${p.nome} ${p.oferta ? '<span class="tag tag-oferta">Oferta</span>' : ''} ${p.esgotado ? '<span class="tag tag-esgotado">Esgotado</span>' : ''} ${p.retirada_apenas ? '<span class="tag tag-retirada">Só retirada</span>' : ''} ${(p.estoque !== null && p.estoque !== undefined) ? `<span class="tag" style="background:#8a7361;color:white;">Estoque: ${p.estoque}</span>` : ''}</strong>
+                <span>R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</span>
+            </div>
+            <div class="produto-acoes">
+                <button class="btn-icone" title="Editar" onclick="editarProduto('${p.id}')"><i class="fa fa-pen"></i></button>
+                <button class="btn-icone apagar" title="Apagar" onclick="apagarProduto('${p.id}')"><i class="fa fa-trash"></i></button>
+            </div>
+        `
+        lista.appendChild(linha)
+    })
+}
+
+// Move um produto pra cima/baixo dentro da própria categoria (direcao: -1 ou 1).
+// Renumera o campo "ordem" de todos os produtos carregados como sequência
+// 0,1,2... na nova ordem — isso corrige de uma vez produtos antigos que
+// nunca tiveram "ordem" definida (ficavam com valor nulo).
+async function moverProduto(id, direcao) {
+    const termo = (document.getElementById("busca-produtos")?.value || "").trim()
+    if (termo) return // não reordena durante uma busca
+
+    const indice = produtosAtuais.findIndex(p => p.id === id)
+    if (indice === -1) return
+    const indiceVizinho = indice + direcao
+    if (indiceVizinho < 0 || indiceVizinho >= produtosAtuais.length) return
+    if (produtosAtuais[indiceVizinho].categoria !== produtosAtuais[indice].categoria) return
+
+    ;[produtosAtuais[indice], produtosAtuais[indiceVizinho]] = [produtosAtuais[indiceVizinho], produtosAtuais[indice]]
+    renderizarListaProdutos() // reflete a troca na tela na hora
+
+    for (let i = 0; i < produtosAtuais.length; i++) {
+        const p = produtosAtuais[i]
+        if (p.ordem !== i) {
+            await sb.from("produtos").update({ ordem: i }).eq("id", p.id)
+            p.ordem = i
+        }
+    }
+}
+
+// ---- Modal: abrir/fechar ----
+const modalProduto = document.getElementById("modal-produto")
+
+document.getElementById("btn-novo-produto").addEventListener("click", () => abrirModalProduto())
+document.getElementById("busca-produtos").addEventListener("input", renderizarListaProdutos)
+document.getElementById("btn-cancelar-produto").addEventListener("click", fecharModalProduto)
+
+function abrirModalProduto(produto) {
+    document.getElementById("modal-titulo").textContent = produto ? "Editar produto" : "Novo produto"
+    document.getElementById("prod-id").value = produto ? produto.id : ""
+    document.getElementById("prod-nome").value = produto ? produto.nome : ""
+    document.getElementById("prod-categoria").value = produto ? produto.categoria : ""
+    document.getElementById("prod-desc").value = produto ? produto.desc || produto.descricao || "" : ""
+    document.getElementById("prod-preco").value = produto ? produto.preco : ""
+    document.getElementById("prod-estoque").value = (produto && produto.estoque !== null && produto.estoque !== undefined) ? produto.estoque : ""
+    fotosProdutoAtual = produto && produto.fotos ? [...produto.fotos] : []
+    renderGaleriaFotos()
+    document.getElementById("prod-fotos-status").textContent = ""
+    document.getElementById("prod-oferta").checked = produto ? !!produto.oferta : false
+    document.getElementById("prod-esgotado").checked = produto ? !!produto.esgotado : false
+    document.getElementById("prod-retirada-apenas").checked = produto ? !!produto.retirada_apenas : false
+
+    opcoesProdutoAtual = (produto && produto.opcoes) ? JSON.parse(JSON.stringify(produto.opcoes)) : []
+    document.getElementById("prod-tem-opcoes").checked = opcoesProdutoAtual.length > 0
+    document.getElementById("opcoes-editor").style.display = opcoesProdutoAtual.length > 0 ? "block" : "none"
+    renderizarOpcoesEditor()
+
+    modalProduto.classList.add("aberto")
+}
+
+function fecharModalProduto() {
+    modalProduto.classList.remove("aberto")
+}
+
+function editarProduto(id) {
+    const p = produtosAtuais.find(x => x.id === id)
+    if (p) abrirModalProduto({ ...p, fotos: p.fotos })
+}
+
+async function apagarProduto(id) {
+    if (!confirm("Apagar este produto? Essa ação não pode ser desfeita.")) return
+    const { error } = await sb.from("produtos").delete().eq("id", id)
+    if (error) { alert("Não foi possível apagar: " + error.message); return }
+    await carregarProdutos()
+}
+
+document.getElementById("btn-salvar-produto").addEventListener("click", async () => {
+    const id = document.getElementById("prod-id").value
+    const temOpcoes = document.getElementById("prod-tem-opcoes").checked
+
+    if (temOpcoes) {
+        const grupoSemNome = opcoesProdutoAtual.some(g => !g.nome.trim())
+        const grupoSemItens = opcoesProdutoAtual.some(g => g.itens.length === 0 || g.itens.some(i => !i.nome.trim()))
+        if (opcoesProdutoAtual.length === 0 || grupoSemNome || grupoSemItens) {
+            alert("Preencha o nome de cada grupo de opções e o nome de cada item, ou desmarque 'Este produto tem opções'.")
+            return
+        }
+    }
+
+    const registro = {
+        loja_id: lojaAtual.id,
+        nome: document.getElementById("prod-nome").value.trim(),
+        categoria: document.getElementById("prod-categoria").value.trim(),
+        descricao: document.getElementById("prod-desc").value.trim(),
+        preco: parseFloat(document.getElementById("prod-preco").value) || 0,
+        estoque: document.getElementById("prod-estoque").value === "" ? null : Math.max(0, parseInt(document.getElementById("prod-estoque").value)),
+        fotos: fotosProdutoAtual,
+        oferta: document.getElementById("prod-oferta").checked,
+        esgotado: document.getElementById("prod-esgotado").checked,
+        retirada_apenas: document.getElementById("prod-retirada-apenas").checked,
+        opcoes: temOpcoes ? opcoesProdutoAtual : null
+    }
+    if (!id) registro.ordem = produtosAtuais.length // produto novo entra no fim da lista
+
+    if (!registro.nome || !registro.categoria) {
+        alert("Preencha ao menos o nome e a categoria.")
+        return
+    }
+
+    const query = id
+        ? sb.from("produtos").update(registro).eq("id", id)
+        : sb.from("produtos").insert(registro)
+
+    const { error } = await query
+
+    if (error) { alert("Não foi possível salvar: " + error.message); return }
+
+    fecharModalProduto()
+    await carregarProdutos()
+})
+
+// ============================================================
+// ABA "MESAS" (comandas do modo mesa)
+// ============================================================
+async function carregarMesas() {
+    const { data, error } = await sb
+        .from("pedidos_mesa")
+        .select("*")
+        .eq("loja_id", lojaAtual.id)
+        .eq("status", "aberto")
+        .order("mesa", { ascending: true })
+        .order("created_at", { ascending: true })
+
+    const msg = document.getElementById("msg-mesas")
+    const box = document.getElementById("lista-mesas")
+
+    if (error) {
+        msg.innerHTML = `<div class="aviso aviso-erro">Erro ao carregar mesas.</div>`
+        return
+    }
+    msg.innerHTML = ""
+
+    if (!data.length) {
+        box.innerHTML = `<p style="color:#8a7361;font-size:14px;">Nenhuma comanda aberta no momento.</p>`
+        return
+    }
+
+    const porMesa = {}
+    data.forEach(p => { (porMesa[p.mesa] ||= []).push(p) })
+
+    box.innerHTML = ""
+    Object.keys(porMesa).sort().forEach(mesa => {
+        const pedidos = porMesa[mesa]
+        const totalMesa = pedidos.reduce((s, p) => s + Number(p.total), 0)
+
+        const card = document.createElement("div")
+        card.className = "mesa-card"
+        card.innerHTML = `
+            <h2><span>Mesa ${mesa}</span><span class="mesa-total">R$ ${totalMesa.toFixed(2).replace(".", ",")}</span></h2>
+            ${pedidos.map(p => `
+                <div class="pedido-bloco">
+                    <div class="pedido-cabeca">
+                        <span class="pedido-hora">${new Date(p.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+                        <button class="btn-cancelar-pedido" onclick="cancelarPedido('${p.id}')" title="Cancelar este pedido"><i class="fa fa-xmark"></i> Cancelar</button>
+                    </div>
+                    ${p.itens.map(i => `
+                        <div class="pedido-item">
+                            ${i.quantity}x ${i.name} — R$ ${(i.price * i.quantity).toFixed(2).replace(".", ",")}
+                            ${i.opcoes && i.opcoes.length ? `<br><span style="font-size:11px;color:#8a7361;">${agruparOpcoesPorGrupo(i.opcoes).join(" · ")}</span>` : ""}
+                        </div>
+                    `).join("")}
+                </div>
+            `).join("")}
+            <div class="mesa-acoes">
+                <button class="btn-mesa-finalizar" onclick="finalizarMesa('${mesa}')"><i class="fa fa-check"></i> Finalizar comanda</button>
+            </div>
+        `
+        box.appendChild(card)
+    })
+}
+
+// ============================================================
+// FINALIZAR COMANDA DA MESA
+// CORRIGIDO: o WhatsApp agora é enviado logo depois de marcar a
+// comanda como finalizada — antes da baixa de estoque. Assim, uma
+// falha na baixa de estoque (ex: internet cair por um instante)
+// nunca mais impede o envio da confirmação e a comanda não se perde.
+// ============================================================
+async function finalizarMesa(mesa) {
+    if (!confirm(`Finalizar a comanda da mesa ${mesa}? Isso vai enviar o resumo pro WhatsApp da loja.`)) return
+
+    // Abre a aba do WhatsApp JÁ, ainda dentro do clique do usuário
+    // (evita o navegador bloquear o popup por causa dos awaits abaixo)
+    const abaWhats = window.open("", "_blank")
+
+    // Busca de novo os pedidos abertos dessa mesa (garante dados frescos)
+    const { data: pedidos, error: erroBusca } = await sb
+        .from("pedidos_mesa")
+        .select("*")
+        .eq("loja_id", lojaAtual.id)
+        .eq("mesa", mesa)
+        .eq("status", "aberto")
+        .order("created_at", { ascending: true })
+
+    if (erroBusca || !pedidos || !pedidos.length) {
+        alert("Não foi possível carregar os pedidos dessa mesa.")
+        if (abaWhats) abaWhats.close()
+        return
+    }
+
+    // Marca como finalizado no banco
+    const { error: erroUpdate } = await sb.from("pedidos_mesa")
+        .update({ status: "finalizado" })
+        .eq("loja_id", lojaAtual.id)
+        .eq("mesa", mesa)
+        .eq("status", "aberto")
+
+    if (erroUpdate) {
+        alert("Erro ao finalizar: " + erroUpdate.message)
+        if (abaWhats) abaWhats.close()
+        return
+    }
+
+    // A comanda já está marcada como finalizada no banco — a partir daqui,
+    // NADA pode impedir o WhatsApp de ser enviado. Por isso ele vem primeiro,
+    // e a baixa de estoque (que já é protegida, mas é um passo a mais que
+    // pode falhar) vem depois, isolada no seu próprio try/catch.
+    const { mensagem, total, itensSomados } = montarMensagemFechamento(mesa, pedidos)
+    enviarWhatsappComMensagem(mensagem, abaWhats)
+
+    // Grava no histórico o texto EXATO que foi enviado — fica registrado
+    // pra sempre, mesmo que produtos/preços mudem depois. Não bloqueia o
+    // fluxo se falhar (o pedido já foi enviado, isso é só o registro).
+    try {
+        const { error: erroHistorico } = await sb.from("comandas_finalizadas").insert({
+            loja_id: lojaAtual.id,
+            origem: "mesa",
+            mesa,
+            mensagem,
+            total,
+            itens: itensSomados
+        })
+        if (erroHistorico) throw erroHistorico
+    } catch (err) {
+        console.error("Erro ao salvar histórico da comanda", mesa, err)
+        alert("A comanda foi finalizada e o WhatsApp foi enviado, mas houve um erro ao salvar no histórico. Anote o pedido manualmente por precaução.")
+    }
+
+    // Alimenta o relatório do dia (Dashboard). Tabela leve, se autolimpa
+    // sozinha — não precisa de proteção forte, uma falha aqui não afeta
+    // WhatsApp nem o histórico, que já rodaram/gravaram acima.
+    try {
+        await sb.from("relatorio_dia").insert({
+            loja_id: lojaAtual.id,
+            origem: "mesa",
+            identificador: mesa,
+            itens: itensSomados,
+            total
+        })
+    } catch (err) {
+        console.error("Erro ao gravar relatório do dia", err)
+    }
+
+    try {
+        // Soma as quantidades por produto (id) pra baixar o estoque de cada um
+        const quantidadesPorProduto = {}
+        pedidos.forEach(p => {
+            p.itens.forEach(i => {
+                quantidadesPorProduto[i.id] = (quantidadesPorProduto[i.id] || 0) + i.quantity
+            })
+        })
+        await baixarEstoque(quantidadesPorProduto, sb)
+        await carregarProdutos() // reflete o novo estoque/esgotado na lista
+    } catch (err) {
+        console.error("Erro ao baixar estoque da mesa", mesa, err)
+        alert("A comanda foi finalizada e o WhatsApp foi enviado normalmente, mas houve um erro ao atualizar o estoque. Confira o estoque manualmente na aba Produtos.")
+    }
+
+    await carregarMesas()
+}
+
+// ============================================================
+// BAIXA DE ESTOQUE
+// CORRIGIDO: cada item agora roda dentro de um try/catch. Antes,
+// uma falha de rede num único item (ex: internet cair por um
+// instante) lançava uma exceção que travava toda a função
+// finalizarMesa() no meio do caminho, antes do envio do WhatsApp.
+// Recebe { produtoId: quantidadeComprada } e desconta de cada
+// produto. Produtos com estoque = null não são controlados, então
+// são ignorados. Ao chegar a 0, marca esgotado automaticamente.
+// ============================================================
+async function baixarEstoque(quantidadesPorProduto, cliente) {
+    for (const [id, qtdComprada] of Object.entries(quantidadesPorProduto)) {
+        try {
+            const { data: prod, error: erroBusca } = await cliente
+                .from("produtos")
+                .select("estoque")
+                .eq("id", id)
+                .single()
+
+            if (erroBusca || !prod || prod.estoque === null || prod.estoque === undefined) continue
+
+            const novoEstoque = Math.max(0, prod.estoque - qtdComprada)
+            const atualizacao = { estoque: novoEstoque }
+            if (novoEstoque === 0) atualizacao.esgotado = true
+
+            await cliente.from("produtos").update(atualizacao).eq("id", id)
+        } catch (err) {
+            // Nunca deixa uma falha aqui travar o restante do processo —
+            // só registra e segue pro próximo item.
+            console.error("Erro ao baixar estoque do produto", id, err)
+        }
+    }
+}
+
+// Monta o texto de fechamento de uma mesa a partir dos pedidos dela.
+// Não manda nada — só retorna o texto pronto, o total e os itens somados.
+function montarMensagemFechamento(mesa, pedidos) {
+    const itensSomados = {}
+    pedidos.forEach(p => {
+        p.itens.forEach(i => {
+            const chave = i.chave || i.name
+            if (!itensSomados[chave]) itensSomados[chave] = { name: i.name, opcoes: i.opcoes, quantity: 0, price: i.price }
+            itensSomados[chave].quantity += i.quantity
+        })
+    })
+
+    const linhasItens = Object.values(itensSomados)
+        .map(info => {
+            const linhaOpcoes = info.opcoes && info.opcoes.length
+                ? "\n  " + agruparOpcoesPorGrupo(info.opcoes).join("\n  ")
+                : ""
+            return `- ${info.name}${linhaOpcoes}\n  Qtd: ${info.quantity} | R$ ${(info.price * info.quantity).toFixed(2).replace(".", ",")}`
+        })
+        .join("\n")
+
+    const total = pedidos.reduce((s, p) => s + Number(p.total), 0)
+    const totalFormatado = total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+
+    const agora = new Date()
+    const dataHoraFormatada = agora.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })
+
+    const mensagem =
+        `*Fechamento de comanda - ${lojaAtual.nome}*\n` +
+        `Mesa: ${mesa}\n` +
+        `Data/Hora: ${dataHoraFormatada}\n` +
+        `--------------------------------\n` +
+        `${linhasItens}\n` +
+        `--------------------------------\n` +
+        `*Total: ${totalFormatado}*`
+
+    return { mensagem, total, itensSomados }
+}
+
+function agruparOpcoesPorGrupo(opcoes) {
+    const porGrupo = {}
+    const ordemGrupos = []
+    opcoes.forEach(o => {
+        const g = o.grupo || "Opções"
+        if (!porGrupo[g]) { porGrupo[g] = []; ordemGrupos.push(g) }
+        porGrupo[g].push(o.nome)
+    })
+    return ordemGrupos.map(g => `${g}: ${porGrupo[g].join(", ")}`)
+}
+
+// Abre (ou reaproveita uma aba já aberta) o WhatsApp com um texto pronto.
+function enviarWhatsappComMensagem(mensagem, abaWhats) {
+    const whatsapp = (lojaAtual.whatsapp || "").trim()
+    if (!whatsapp) {
+        alert("Esta loja não tem um WhatsApp cadastrado (aba Dados da loja).")
+        if (abaWhats) abaWhats.close()
+        return
+    }
+
+    const url = `https://wa.me/${whatsapp}?text=${encodeURIComponent(mensagem)}`
+
+    if (abaWhats) {
+        abaWhats.location.href = url
+    } else {
+        window.open(url, "_blank")
+    }
+}
+
+async function cancelarPedido(id) {
+    if (!confirm("Cancelar este pedido? Ele será removido da comanda e não entra no fechamento.")) return
+
+    const { error } = await sb.from("pedidos_mesa")
+        .delete()
+        .eq("id", id)
+        .eq("loja_id", lojaAtual.id) // trava extra: só apaga pedido da própria loja
+
+    if (error) {
+        alert("Não foi possível cancelar: " + error.message)
+        return
+    }
+
+    await carregarMesas()
+}
+
+function inscreverAtualizacoesMesas() {
+    if (canalMesasInscrito) return
+    canalMesasInscrito = true
+
+    sb.channel("pedidos-mesa-painel")
+        .on("postgres_changes",
+            { event: "INSERT", schema: "public", table: "pedidos_mesa", filter: `loja_id=eq.${lojaAtual.id}` },
+            () => {
+                const abaMesasAtiva = document.getElementById("secao-mesas").classList.contains("ativa")
+                if (abaMesasAtiva) {
+                    carregarMesas()
+                } else {
+                    document.getElementById("bolinha-mesas").classList.add("visivel")
+                }
+            }
+        )
+        .subscribe()
+}
+
+let canalHistoricoDeliveryInscrito = false
+
+// Escuta novos pedidos de delivery/retirada assim que são gravados em
+// comandas_finalizadas (pelo site público, em script.js). Se a aba já
+// estiver aberta, recarrega a lista na hora; senão, só acende a bolinha.
+function inscreverAtualizacoesHistoricoDelivery() {
+    if (canalHistoricoDeliveryInscrito) return
+    canalHistoricoDeliveryInscrito = true
+
+    sb.channel("historico-delivery-painel")
+        .on("postgres_changes",
+            { event: "INSERT", schema: "public", table: "comandas_finalizadas", filter: `loja_id=eq.${lojaAtual.id}` },
+            (payload) => {
+                if (payload.new.origem !== "delivery") return
+                const abaAtiva = document.getElementById("secao-historico-delivery").classList.contains("ativa")
+                if (abaAtiva) {
+                    carregarHistoricoDelivery()
+                } else {
+                    document.getElementById("bolinha-historico-delivery").classList.add("visivel")
+                }
+            }
+        )
+        .subscribe()
+}
+
+// ============================================================
+// ABA "DASHBOARD"
+// Lê só de relatorio_dia — essa tabela nunca guarda mais que o
+// dia de hoje por loja, então não precisa nem filtrar por data.
+// ============================================================
+async function carregarDashboard() {
+    const msg = document.getElementById("msg-dashboard")
+    msg.innerHTML = ""
+
+    try {
+        const { data, error } = await sb
+            .from("relatorio_dia")
+            .select("*")
+            .eq("loja_id", lojaAtual.id)
+
+        if (error) throw error
+
+        const pedidosHoje = data || []
+        const vendasHoje = pedidosHoje.reduce((s, p) => s + Number(p.total), 0)
+
+        document.getElementById("dash-vendas-hoje").textContent = vendasHoje.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+        document.getElementById("dash-pedidos-hoje").textContent = pedidosHoje.length
+
+        const contagem = {}
+        pedidosHoje.forEach(p => {
+            Object.values(p.itens || {}).forEach(info => {
+                const nome = info.name || "?"
+                contagem[nome] = (contagem[nome] || 0) + info.quantity
+            })
+        })
+        const topProduto = Object.entries(contagem).sort((a, b) => b[1] - a[1])[0]
+        document.getElementById("dash-top-produto").textContent = topProduto ? `${topProduto[0]} (${topProduto[1]}x)` : "—"
+
+        window._pedidosHojeDashboard = pedidosHoje
+    } catch (err) {
+        msg.innerHTML = `<div class="aviso aviso-erro">Erro ao carregar o dashboard.</div>`
+        console.error(err)
+    }
+}
+
+document.getElementById("btn-baixar-relatorio").addEventListener("click", () => {
+    const pedidos = window._pedidosHojeDashboard || []
+    if (!pedidos.length) {
+        alert("Nenhum pedido registrado hoje ainda.")
+        return
+    }
+
+    const linhas = [["Hora", "Origem", "Itens", "Opções", "Total"]]
+    pedidos
+        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+        .forEach(p => {
+            const hora = new Date(p.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+            const origem = p.origem === "mesa" ? `Mesa ${p.identificador}` : (p.origem === "entrega" ? "Delivery" : "Retirada")
+            const itensTexto = Object.values(p.itens || {}).map(i => `${i.quantity}x ${i.name || "?"}`).join(" | ")
+            const opcoesTexto = Object.values(p.itens || {}).map(i => {
+                if (!i.opcoes || !i.opcoes.length) return ""
+                return `${i.name}: ${agruparOpcoesPorGrupo(i.opcoes).join("; ")}`
+            }).filter(Boolean).join(" | ")
+            const totalTexto = Number(p.total).toFixed(2).replace(".", ",")
+            linhas.push([hora, origem, itensTexto, opcoesTexto, totalTexto])
+        })
+
+    const csv = linhas.map(l => l.map(campo => `"${String(campo).replace(/"/g, '""')}"`).join(";")).join("\n")
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `relatorio-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+})
+
+// ============================================================
+// ABA "HISTÓRICO MESA" (comandas de mesa finalizadas)
+// Mostra as 30 mais recentes com origem = 'mesa'.
+// ============================================================
+let historicoMesaAtual = []
+
+async function carregarHistoricoMesa() {
+    const msg = document.getElementById("msg-historico-mesa")
+    const { data, error } = await sb
+        .from("comandas_finalizadas")
+        .select("*")
+        .eq("loja_id", lojaAtual.id)
+        .eq("origem", "mesa")
+        .order("created_at", { ascending: false })
+        .limit(30)
+
+    if (error) {
+        msg.innerHTML = `<div class="aviso aviso-erro">Erro ao carregar histórico.</div>`
+        return
+    }
+    msg.innerHTML = ""
+
+    historicoMesaAtual = data || []
+    renderizarHistoricoMesa()
+}
+
+function renderizarHistoricoMesa() {
+    const box = document.getElementById("lista-historico-mesa")
+    box.innerHTML = ""
+
+    if (!historicoMesaAtual.length) {
+        box.innerHTML = `<p style="color:#8a7361;font-size:14px;">Nenhuma comanda de mesa finalizada ainda.</p>`
+        return
+    }
+
+    historicoMesaAtual.forEach(c => {
+        const dataHora = new Date(c.created_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })
+        const totalFormatado = Number(c.total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+
+        const card = document.createElement("div")
+        card.className = "historico-card"
+        card.innerHTML = `
+            <div class="historico-topo">
+                <span class="mesa-nome">Mesa ${c.mesa}</span>
+                <span class="data-hora">${dataHora}</span>
+                <span class="total">${totalFormatado}</span>
+            </div>
+            <div class="historico-texto">${c.mensagem}</div>
+            <div class="historico-acoes">
+                <button class="btn-historico btn-reenviar" onclick="reenviarHistorico('${c.id}', 'mesa')"><i class="fab fa-whatsapp"></i> Enviar pro WhatsApp</button>
+                <button class="btn-historico btn-copiar" id="btn-copiar-${c.id}" onclick="copiarHistorico('${c.id}', 'mesa')"><i class="fa fa-copy"></i> Copiar comanda</button>
+            </div>
+        `
+        box.appendChild(card)
+    })
+}
+
+// ============================================================
+// ABA "HISTÓRICO DELIVERY" (pedidos de delivery/retirada)
+// Mesma lógica e mesmo limite de 30, filtrando origem = 'delivery'.
+// ============================================================
+let historicoDeliveryAtual = []
+
+async function carregarHistoricoDelivery() {
+    const msg = document.getElementById("msg-historico-delivery")
+    const { data, error } = await sb
+        .from("comandas_finalizadas")
+        .select("*")
+        .eq("loja_id", lojaAtual.id)
+        .eq("origem", "delivery")
+        .order("created_at", { ascending: false })
+        .limit(30)
+
+    if (error) {
+        msg.innerHTML = `<div class="aviso aviso-erro">Erro ao carregar histórico.</div>`
+        return
+    }
+    msg.innerHTML = ""
+
+    historicoDeliveryAtual = data || []
+    renderizarHistoricoDelivery()
+}
+
+function renderizarHistoricoDelivery() {
+    const box = document.getElementById("lista-historico-delivery")
+    box.innerHTML = ""
+
+    if (!historicoDeliveryAtual.length) {
+        box.innerHTML = `<p style="color:#8a7361;font-size:14px;">Nenhum pedido de delivery finalizado ainda.</p>`
+        return
+    }
+
+    historicoDeliveryAtual.forEach(c => {
+        const dataHora = new Date(c.created_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })
+        const totalFormatado = Number(c.total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+
+        const card = document.createElement("div")
+        card.className = "historico-card"
+        card.innerHTML = `
+            <div class="historico-topo">
+                <span class="mesa-nome">Pedido delivery</span>
+                <span class="data-hora">${dataHora}</span>
+                <span class="total">${totalFormatado}</span>
+            </div>
+            <div class="historico-texto">${c.mensagem}</div>
+            <div class="historico-acoes">
+                <button class="btn-historico btn-reenviar" onclick="reenviarHistorico('${c.id}', 'delivery')"><i class="fab fa-whatsapp"></i> Enviar pro WhatsApp</button>
+                <button class="btn-historico btn-copiar" id="btn-copiar-${c.id}" onclick="copiarHistorico('${c.id}', 'delivery')"><i class="fa fa-copy"></i> Copiar comanda</button>
+            </div>
+        `
+        box.appendChild(card)
+    })
+}
+
+function reenviarHistorico(id, tipo) {
+    const lista = tipo === "mesa" ? historicoMesaAtual : historicoDeliveryAtual
+    const comanda = lista.find(c => c.id === id)
+    if (!comanda) return
+    enviarWhatsappComMensagem(comanda.mensagem, null)
+}
+
+async function copiarHistorico(id, tipo) {
+    const lista = tipo === "mesa" ? historicoMesaAtual : historicoDeliveryAtual
+    const comanda = lista.find(c => c.id === id)
+    if (!comanda) return
+
+    const btn = document.getElementById(`btn-copiar-${id}`)
+    const textoOriginal = btn.innerHTML
+
+    try {
+        await navigator.clipboard.writeText(comanda.mensagem)
+    } catch (err) {
+        // Navegadores mais antigos / contexto sem permissão: usa o método antigo como reserva
+        const textarea = document.createElement("textarea")
+        textarea.value = comanda.mensagem
+        textarea.style.position = "fixed"
+        textarea.style.opacity = "0"
+        document.body.appendChild(textarea)
+        textarea.select()
+        try { document.execCommand("copy") } catch (err2) { console.error("Falha ao copiar", err2) }
+        document.body.removeChild(textarea)
+    }
+
+    btn.innerHTML = `<i class="fa fa-check"></i> Copiado!`
+    setTimeout(() => { btn.innerHTML = textoOriginal }, 1800)
+}
+
+// ============================================================
+// ARRASTAR AS ABAS COM O DEDO/MOUSE
+// ============================================================
+;(function(){
+    const abas = document.querySelector(".abas")
+    if (!abas) return
+    let arrastando = false
+    let posInicialX = 0
+    let scrollInicial = 0
+    let moveu = false
+
+    function inicio(x) {
+        arrastando = true
+        moveu = false
+        posInicialX = x
+        scrollInicial = abas.scrollLeft
+    }
+
+    function mover(x, evento) {
+        if (!arrastando) return
+        const delta = x - posInicialX
+        if (Math.abs(delta) > 5 && !moveu) {
+            moveu = true
+            abas.classList.add("arrastando")
+        }
+        if (moveu) {
+            if (evento) evento.preventDefault()
+            abas.scrollLeft = scrollInicial - delta
+        }
+    }
+
+    function parar() {
+        arrastando = false
+        abas.classList.remove("arrastando")
+    }
+
+    // --- Touch (celular) ---
+    abas.addEventListener("touchstart", (e) => {
+        inicio(e.touches[0].clientX)
+    }, { passive: true })
+
+    abas.addEventListener("touchmove", (e) => {
+        mover(e.touches[0].clientX, e)
+    }, { passive: false })
+
+    abas.addEventListener("touchend", parar)
+    abas.addEventListener("touchcancel", parar)
+
+    // --- Mouse (computador) ---
+    abas.addEventListener("mousedown", (e) => {
+        inicio(e.clientX)
+    })
+    abas.addEventListener("mousemove", (e) => {
+        mover(e.clientX, e)
+    })
+    document.addEventListener("mouseup", parar)
+    abas.addEventListener("mouseleave", parar)
+
+    // impede que o clique troque de aba logo depois de um arraste
+    abas.addEventListener("click", (e) => {
+        if (moveu) { e.stopPropagation(); e.preventDefault() }
+    }, true)
+})()
+
+// ============================================================
+// TROCAR DE ABA ARRASTANDO NO CORPO DA PÁGINA (SWIPE)
+// ============================================================
+;(function(){
+    const ordemAbas = ["mesas", "historico-mesa", "historico-delivery", "produtos", "loja", "dashboard"]
+    let inicioX = 0, inicioY = 0, rastreando = false
+    let paginaFicouEscondida = false // detecta se o app foi pro 2º plano (ex: seletor de arquivo abriu)
+
+    // Se a página ficar escondida durante um toque em andamento (o que
+    // acontece quando o seletor de foto do celular abre por cima), marca
+    // pra invalidar esse gesto quando o touchend chegar.
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden && rastreando) {
+            paginaFicouEscondida = true
+        }
+    })
+
+    document.addEventListener("touchstart", (e) => {
+        if (e.touches.length !== 1) return
+        if (document.getElementById("modal-produto").classList.contains("aberto")) return
+        // ignora toques que começam no cabeçalho ou na barra de abas
+        if (e.target.closest("header.topo") || e.target.closest(".abas")) return
+        inicioX = e.touches[0].clientX
+        inicioY = e.touches[0].clientY
+        rastreando = true
+        paginaFicouEscondida = false // reseta a cada novo toque
+    }, { passive: true })
+
+    document.addEventListener("touchend", (e) => {
+        if (!rastreando) return
+        rastreando = false
+
+        // Se a página ficou escondida no meio do caminho (seletor de
+        // arquivo, câmera, etc.), ignora esse toque — não é um swipe real.
+        if (paginaFicouEscondida) {
+            paginaFicouEscondida = false
+            return
+        }
+
+        const deltaX = e.changedTouches[0].clientX - inicioX
+        const deltaY = e.changedTouches[0].clientY - inicioY
+
+        if (Math.abs(deltaX) < 60 || Math.abs(deltaX) < Math.abs(deltaY)) return
+
+        const abaAtivaBtn = document.querySelector(".aba-btn.ativa")
+        if (!abaAtivaBtn) return
+        const indiceAtual = ordemAbas.indexOf(abaAtivaBtn.dataset.aba)
+        if (indiceAtual === -1) return
+
+        const proximoIndice = deltaX < 0 ? indiceAtual + 1 : indiceAtual - 1
+        if (proximoIndice < 0 || proximoIndice >= ordemAbas.length) return
+
+        const novoBtn = document.querySelector(`.aba-btn[data-aba="${ordemAbas[proximoIndice]}"]`)
+        if (novoBtn) novoBtn.click()
+    })
+})()
+
+</script>
+</body>
+</html>

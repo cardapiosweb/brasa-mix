@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Churrascaria</title>
+
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css"/>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Fonte estática de reserva (usada se o JS do tema falhar por algum motivo) -->
+    <link href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;600;700;800&family=Caveat:wght@600;700&family=Mulish:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2D7kSs0v4LLanw2qksYuRlEzO+tcaEPQogQ0KaoGN26/zrn20ImR1DfuLWnOo7aBA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <link rel="stylesheet" href="./styles/output.css"/>
+
+    <!-- ===== SISTEMA DE TEMAS =====
+         fontes-tema: preenchido dinamicamente pelo config-loja.js com as
+         fontes do tema escolhido. temas.js precisa vir ANTES de config-loja.js. -->
+    <link id="fontes-tema" rel="stylesheet" href="" />
+    <script src="./temas.js"></script>
+    <script src="./config-loja.js"></script>
+
+    <!-- META TAG -->
+    <meta id="og-title" property="og:title" content="Mestre do Churrasco - Espetos, cortes e muito mais"/>
+    <meta id="og-image" property="og:image" content="./assets/img/logo.jpg"/>
+    <meta id="og-description" property="og:description" content="Espetos, cortes especiais e muito mais. Peça pelo WhatsApp!"/>
+    <meta id="og-site-name" property="og:site_name" content="Mestre do Churrasco"/>
+
+    <style>
+        :root {
+            /* Estes valores são apenas RESERVA, usados só se o
+               config-loja.js/temas.js não carregarem por algum motivo.
+               Na prática, sempre são sobrescritos em tempo real pelo
+               config-loja.js de acordo com o tema escolhido — não
+               precisa editar aqui pra trocar o design do cliente. */
+            --laranja: #A9321E;
+            --laranja-escuro: #7A2416;
+            --laranja-claro: #F7E4DC;
+            --carvao: #241B16;
+            --carvao-suave: #3A2C24;
+            --creme: #FBF3E4;
+            --dourado: #D9A441;
+            --verde-manjericao: #4C6B3F;
+            --linha: #E4D5B7;
+
+            --fonte-titulo: 'Bitter', serif;
+            --fonte-texto: 'Mulish', sans-serif;
+            --fonte-script: 'Caveat', cursive;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: var(--fonte-texto);
+            background-color: var(--creme);
+            color: var(--carvao);
+        }
+
+        h1, h2 {
+            font-family: var(--fonte-titulo);
+        }
+
+        .script-acento {
+            font-family: var(--fonte-script);
+        }
+
+        .bg-laranja { background-color: var(--laranja); }
+        .text-laranja { color: var(--laranja); }
+        .border-laranja { border-color: var(--laranja); }
+
+        /* Botão adicionar ao carrinho */
+        .add-to-cart-btn {
+            background-color: var(--laranja);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 50%;
+            transition: background-color 0.2s, transform 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            align-self: flex-end;
+        }
+        .add-to-cart-btn:hover {
+            background-color: var(--laranja-escuro);
+            transform: rotate(-8deg);
+        }
+
+        /* Contador de quantidade */
+        .qty-selector {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .qty-btn {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 1.5px solid var(--laranja);
+            background: var(--creme);
+            color: var(--laranja);
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s, color 0.2s;
+        }
+        @media (max-width: 480px) {
+            .qty-btn { width: 34px; height: 34px; }
+        }
+        .qty-btn:hover { background: var(--laranja); color: white; }
+        .qty-value { min-width: 18px; text-align: center; font-weight: 700; }
+        body.dark .qty-btn { background: #241B16; }
+
+        /* Botão desabilitado (produto esgotado) */
+        .add-to-cart-btn.esgotado-btn,
+        .btn-add-modal.esgotado-btn {
+            background-color: #d1d5db !important;
+            color: #6b7280 !important;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .add-to-cart-btn.esgotado-btn:hover {
+            background-color: #d1d5db !important;
+            transform: none !important;
+        }
+        body.dark .add-to-cart-btn.esgotado-btn,
+        body.dark .btn-add-modal.esgotado-btn {
+            background-color: #374151 !important;
+            color: #9ca3af !important;
+        }
+
+        /* Card de produto */
+        .product-info {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            margin-left: 16px;
+        }
+        .product-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: auto;
+            padding-top: 10px;
+            flex-wrap: wrap;
+            row-gap: 8px;
+        }
+        .product-footer-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: auto;
+        }
+
+        .product-clickable { cursor: pointer; }
+        .product-clickable:hover { opacity: 0.85; }
+        .product-name-clickable {
+            cursor: pointer;
+            transition: color 0.2s;
+            font-family: var(--fonte-titulo);
+            font-weight: 700;
+        }
+        .product-name-clickable:hover { color: var(--laranja); }
+
+        /* Imagem do produto: cantos suaves + leve sombra de "assado" */
+        #menu img.product-clickable {
+            border-radius: 12px;
+            box-shadow: 0 3px 0 rgba(36,27,22,0.12);
+        }
+
+        @media (max-width: 360px) {
+            #menu img.product-clickable {
+                width: 84px !important;
+                height: 84px !important;
+            }
+        }
+
+        /* Produto esgotado: nome riscado e em cinza */
+        .produto-esgotado .product-name-clickable {
+            text-decoration: line-through;
+            color: #9ca3af;
+        }
+        .produto-esgotado .product-name-clickable:hover {
+            color: #9ca3af;
+        }
+        .produto-esgotado img.product-clickable {
+            opacity: 0.55;
+            filter: grayscale(40%);
+        }
+
+        /* Separador de categoria: estilo "quadro de forno" com chama */
+        .category-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--carvao);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            padding-bottom: 10px;
+        }
+        .category-title::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 60px;
+            height: 3px;
+            background: var(--dourado);
+            border-radius: 2px;
+        }
+
+        .categoria-grid {
+            overflow: hidden;
+            transition: max-height 0.35s ease, opacity 0.3s ease, margin-bottom 0.35s ease;
+            opacity: 1;
+        }
+        .categoria-grid.categoria-fechada {
+            opacity: 0;
+            margin-bottom: 0 !important;
+        }
+        .category-chevron {
+            transition: transform 0.3s ease;
+            color: var(--dourado);
+        }
+        .category-chevron.chevron-fechado {
+            transform: rotate(-90deg);
+        }
+
+        /* ===== BARRA DE CATEGORIAS (atalhos) ===== */
+        .categorias-nav {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 4px 4px 18px;
+            scrollbar-width: thin;
+        }
+        .categorias-nav::-webkit-scrollbar { height: 6px; }
+        .categorias-nav::-webkit-scrollbar-thumb {
+            background: var(--linha);
+            border-radius: 999px;
+        }
+        .categoria-nav-btn {
+            flex: 0 0 auto;
+            white-space: nowrap;
+            padding: 8px 16px;
+            border-radius: 999px;
+            border: 1.5px solid var(--laranja);
+            color: var(--laranja);
+            background: var(--creme);
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+        .categoria-nav-btn:hover,
+        .categoria-nav-btn.ativa {
+            background: var(--laranja);
+            color: white;
+        }
+        body.dark .categoria-nav-btn { background: #241B16; }
+        body.dark .categoria-nav-btn:hover,
+        body.dark .categoria-nav-btn.ativa { background: var(--laranja); color: white; }
+
+        /* Badge de oferta: como um "carimbo" de forno */
+        .badge-oferta {
+            background-color: var(--verde-manjericao);
+            color: white;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-left: 6px;
+            vertical-align: middle;
+            letter-spacing: 0.03em;
+        }
+
+        /* Badge de esgotado */
+        .badge-esgotado {
+            background-color: #6b7280;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+
+        /* Opções de entrega/retirada e pagamento no modal */
+        .delivery-option {
+            border: 2px solid var(--linha);
+            border-radius: 10px;
+            padding: 10px 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: 1;
+            text-align: center;
+            font-weight: 600;
+        }
+        .delivery-option.selected {
+            border-color: var(--laranja);
+            background-color: var(--laranja-claro);
+            color: var(--laranja-escuro);
+            font-weight: bold;
+        }
+
+        /* Modal do carrinho */
+        #cart-modal > div {
+            overflow-y: auto;
+            max-height: 90vh;
+            border-radius: 16px;   
+        }
+
+        #options-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(36,27,22,0.7);
+        z-index: 210;
+        align-items: center;
+        justify-content: center;
+        }
+        #options-modal.open { display: flex; }
+        .options-modal-box {
+            background: var(--creme);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 480px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 20px;
+            position: relative;
+        }
+        .options-grupo { margin-bottom: 18px; }
+        .options-grupo-titulo {
+            font-family: var(--fonte-titulo);
+            font-weight: 700;
+            font-size: 16px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px 8px;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .options-grupo-limite {
+            font-size: 12px;
+            color: var(--carvao-suave);
+            font-weight: 400;
+        }
+        .options-item {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 4px 10px;
+            justify-content: space-between;
+            border: 1.5px solid var(--linha);
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .options-item:hover { border-color: var(--laranja); }
+        .options-item.selecionado {
+            border-color: var(--laranja);
+            background: var(--laranja-claro);
+        }
+        .options-item-preco {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--laranja);
+        }
+        body.dark .options-modal-box { background-color: #241B16; color: #F3E9DA; }
+        body.dark .options-item { border-color: #3A2C24; }
+        body.dark .options-item.selecionado { background: #3A2416; }
+        body.dark .options-grupo-limite { color: #C9B79E; }
+
+        /* ===== MODAL DE PRODUTO ===== */
+        #product-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(36,27,22,0.7);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+        #product-modal.open { display: flex; }
+        .product-modal-box {
+            background: var(--creme);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 480px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 20px;
+            position: relative;
+        }
+        .product-modal-back {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--carvao-suave);
+            margin-bottom: 16px;
+            padding: 0;
+            font-weight: 600;
+        }
+        .product-modal-back:hover { color: var(--laranja); }
+
+        .product-modal-gallery {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 14px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 2px;
+        }
+        .product-modal-gallery img {
+            width: 56px;
+            height: 56px;
+            flex: 0 0 auto;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid var(--linha);
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .product-modal-gallery img.active,
+        .product-modal-gallery img:hover {
+            border-color: var(--laranja);
+        }
+        .product-modal-main-img {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+        .product-modal-name {
+            font-family: var(--fonte-titulo);
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .product-modal-desc {
+            font-size: 14px;
+            color: var(--carvao-suave);
+            margin-bottom: 12px;
+        }
+        .product-modal-price {
+            font-family: var(--fonte-titulo);
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--laranja);
+            margin-bottom: 16px;
+        }
+        .product-modal-price-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .product-modal-price-row .product-modal-price {
+            margin-bottom: 0;
+        }
+        .product-modal-actions { display: flex; gap: 8px; }
+        @media (max-width: 360px) {
+            .product-modal-actions { flex-direction: column; }
+            .btn-add-modal, .btn-info-whats, .btn-share-whats { flex: 1 1 auto; }
+        }
+        .btn-add-modal {
+            flex: 1;
+            background-color: var(--laranja);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 6px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: background-color 0.2s;
+        }
+        .btn-add-modal:hover { background-color: var(--laranja-escuro); }
+        .btn-info-whats {
+            flex: 1;
+            background-color: var(--verde-manjericao);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 6px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: background-color 0.2s;
+        }
+        .btn-info-whats:hover { background-color: #395530; }
+        .btn-share-whats {
+            flex: 1;
+            background-color: var(--carvao-suave);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 6px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: background-color 0.2s;
+        }
+        .btn-share-whats:hover { background-color: var(--carvao); }
+
+        /* ===== DARK MODE ===== */
+        body.dark { background-color: #171210; color: #F3E9DA; }
+        body.dark .bg-white { background-color: #241B16 !important; }
+        body.dark .text-gray-600 { color: #C9B79E !important; }
+        body.dark .text-gray-500 { color: #C9B79E !important; }
+        body.dark .border-b { border-color: #3A2C24 !important; }
+        body.dark #cart-modal > div { background-color: #241B16; }
+        body.dark .delivery-option { border-color: #3A2C24; background-color: #171210; color: #F3E9DA; }
+        body.dark .delivery-option.selected { background-color: #3A2416; border-color: var(--laranja); color: #F3C7B5; }
+        body.dark input { background-color: #171210; color: #F3E9DA; border-color: #3A2C24; }
+        body.dark .product-modal-box { background-color: #241B16; color: #F3E9DA; }
+        body.dark .product-modal-desc { color: #C9B79E; }
+        body.dark .product-modal-back { color: #C9B79E; }
+        body.dark h2 { color: #F3E9DA; }
+        body.dark .category-title { color: #F3E9DA; }
+
+        /* Toggle dark mode */
+        #dark-toggle {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 50;
+            background: rgba(36,27,22,0.6);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        #dark-toggle:hover { background: rgba(36,27,22,0.85); }
+
+        /* ===== VOLTAR AO TOPO — logo abaixo do botão de tema ===== */
+        .topo-flutuante {
+            position: fixed;
+            top: 68px;
+            left: 16px;
+            z-index: 49;
+            background: var(--laranja);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            opacity: 0;
+            transform: translateY(-8px);
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease, background-color 0.2s;
+        }
+        .topo-flutuante.visivel {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .topo-flutuante:hover { background-color: var(--laranja-escuro); }
+
+        /* ===== CARRINHO FLUTUANTE ===== */
+        .cart-flutuante {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 55;
+            background: var(--carvao);
+            color: var(--creme);
+            border: 1.5px solid var(--laranja);
+            border-radius: 999px;
+            width: 52px;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+            transition: transform 0.2s;
+        }
+        .cart-flutuante:hover { transform: scale(1.08); }
+        .cart-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: var(--laranja);
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+            min-width: 20px;
+            height: 20px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            border: 2px solid var(--creme);
+        }
+        body.dark .cart-badge { border-color: #171210; }
+
+        /* ===== BOTÃO WHATSAPP FLUTUANTE ===== */
+        #whats-flutuante {
+            position: fixed;
+            top: 80px;
+            right: 16px;
+            z-index: 50;
+            background: #25D366;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 52px;
+            height: 52px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
+        }
+        #whats-flutuante:hover { transform: scale(1.1); }
+
+        @keyframes cartPop {
+            0%   { transform: scale(1); }
+            40%  { transform: scale(1.35); background-color: var(--laranja-escuro); }
+            100% { transform: scale(1); }
+        }
+        .cart-animate { animation: cartPop 0.6s ease; }
+
+        @keyframes counterPop {
+            0%   { transform: scale(1); }
+            50%  { transform: scale(1.5); }
+            100% { transform: scale(1); }
+        }
+        .counter-animate { animation: counterPop 0.4s ease; }
+
+        /* ===== CABEÇALHO: quadro de forno ===== */
+        #header-banner {
+            background-color: var(--carvao);
+            position: relative;
+        }
+        #header-banner::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            background: radial-gradient(circle at 20% 30%, rgba(217,164,65,0.10) 0, transparent 45%),
+                        radial-gradient(circle at 80% 70%, rgba(169,50,30,0.14) 0, transparent 50%);
+        }
+        #header-banner > div {
+            position: relative;
+            z-index: 2;
+        }
+        #header-banner .selo {
+            width: 128px;
+            height: 128px;
+            border-radius: 50%;
+            background: var(--creme);
+            border: 4px solid var(--laranja);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 14px rgba(0,0,0,0.45);
+        }
+        #header-banner h1 {
+            font-size: 40px;
+            font-weight: 800;
+            color: var(--creme);
+            letter-spacing: -0.01em;
+            text-shadow: 0 1px 0 rgba(0,0,0,0.85), 0 2px 3px rgba(0,0,0,0.7), 0 6px 20px rgba(0,0,0,0.6);
+            text-align: center;
+            max-width: 90%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        @media (max-width: 420px) {
+            #header-banner h1 { font-size: 30px; }
+            #header-banner .selo { width: 96px; height: 96px; }
+            #header-banner .selo img { width: 84px; height: 84px; }
+        }
+        #header-banner .tagline {
+            font-family: var(--fonte-script);
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--dourado);
+            margin-top: -6px;
+            -webkit-text-stroke: 0.6px rgba(36,27,22,0.9);
+            text-shadow: 0 1px 1px rgba(0,0,0,0.9), 0 3px 10px rgba(0,0,0,0.75);
+            text-align: center;
+            max-width: 85%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        #header-banner .endereco {
+            color: #FFFFFF;
+            font-weight: 700;
+            text-shadow: 0 1px 0 rgba(0,0,0,0.8), 0 2px 6px rgba(0,0,0,0.7);
+        }
+        #date-span {
+            border: 1.5px solid var(--laranja);
+            background: rgba(36,27,22,0.55);
+        }
+        #date-span span {
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+
+        /* ===== Elementos escondidos via JS (modo mesa / retirada-apenas) ===== */
+        .oculto-modo {
+            display: none !important;
+        }
+
+        /* ===== Aviso informativo de taxa de entrega ===== */
+        #taxa-entrega-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12.5px;
+            color: var(--carvao-suave);
+            background: var(--laranja-claro);
+            border: 1px solid var(--linha);
+            border-radius: 8px;
+            padding: 6px 10px;
+            margin: 6px 0 10px;
+        }
+        #taxa-entrega-info i {
+            color: var(--laranja);
+        }
+        body.dark #taxa-entrega-info {
+            background: #241B16;
+            border-color: #3A2C24;
+            color: #C9B79E;
+        }
+
+        /* ===== Rodapé promocional fixo (marca d'água do serviço) ===== */
+        #footer-promo {
+            width: 100%;
+            text-align: center;
+            padding: 14px 10px 22px;
+            font-size: 11.5px;
+            color: var(--carvao-suave);
+            opacity: 0.65;
+            letter-spacing: 0.01em;
+        }
+        #footer-promo a {
+            color: var(--carvao-suave);
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            transition: opacity 0.2s;
+        }
+        #footer-promo a:hover {
+            opacity: 0.85;
+        }
+        body.dark #footer-promo {
+            color: #C9B79E;
+        }
+        body.dark #footer-promo a {
+            color: #C9B79E;
+        }
+    </style>
+</head>
+
+<body class="pb-16">
+
+    <button id="dark-toggle" title="Alternar modo escuro">
+        <i class="fa fa-moon" id="dark-icon"></i>
+        <span id="dark-text">Tema</span>
+    </button>
+
+    <!-- VOLTAR AO TOPO -->
+    <button id="topo-btn" class="topo-flutuante" title="Voltar ao topo">
+        <i class="fa fa-arrow-up"></i>
+    </button>
+
+    <button id="cart-btn" class="cart-flutuante" title="Ver meu pedido">
+        <i class="fa fa-cart-plus"></i>
+        <span id="cart-count" class="cart-badge">0</span>
+    </button>
+
+    <a id="whats-flutuante" href="#" target="_blank" title="Fale conosco">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
+    <!-- HEADER -->
+    <header class="w-full h-[420px] bg-cover" style="background-position: center 15%;" id="header-banner">
+        <div class="w-full h-full flex flex-col justify-center items-center">
+
+            <div class="selo shadow-lg hover:scale-110 duration-200">
+                <img
+                    id="logo-img"
+                    alt=""
+                    class="w-28 h-28 rounded-full object-cover"
+                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"
+                />
+                <!-- Ícone padrão até o config-loja.js trocar pelo ícone do tema escolhido -->
+                <div style="display:none" class="w-full h-full rounded-full flex items-center justify-center">
+                    <i class="fa fa-store text-5xl" style="color: var(--laranja);"></i>
+                </div>
+            </div>
+
+            <h1 class="mt-4 mb-1" id="loja-nome"></h1>
+            <p class="tagline" id="loja-tagline"></p>
+
+            <span class="endereco mt-3 w-[85%] text-center text-sm md:text-base block mx-auto" id="loja-endereco"></span>
+
+            <div class="px-4 py-1 rounded-lg mt-5" id="date-span">
+                <span class="text-white font-medium" id="loja-horario"></span>
+            </div>
+
+        </div>
+    </header>
+    <!-- FIM HEADER -->
+
+    <h2 class="text-2xl md:text-3xl font-bold text-center mt-9 mb-4" id="titulo-secao-menu"></h2>
+
+    <!-- Barra de atalhos das categorias (gerada pelo script.js) -->
+    <div class="mx-auto max-w-7xl px-4">
+        <nav id="categorias-nav" class="categorias-nav"></nav>
+    </div>
+
+    <div id="menu"></div>
+
+    <!-- ===== MODAL DE PRODUTO ===== -->
+    <div id="product-modal" onclick="fecharModalProdutoSeOverlay(event)">
+        <div class="product-modal-box">
+
+            <button class="product-modal-back" onclick="fecharModalProduto()">
+                <i class="fa fa-arrow-left"></i> Voltar
+            </button>
+
+            <img id="modal-main-img" alt="" class="product-modal-main-img"
+                onerror="imagemFallbackProduto(this)"
+            />
+
+            <div class="product-modal-gallery" id="modal-gallery"></div>
+
+            <p class="product-modal-name" id="modal-name"></p>
+            <p class="product-modal-desc" id="modal-desc"></p>
+
+            <div class="product-modal-price-row">
+                <p class="product-modal-price" id="modal-price"></p>
+
+                <div class="qty-selector" id="modal-qty-selector" data-qty="1">
+                    <button class="qty-btn" id="modal-qty-decrease" type="button">−</button>
+                    <span class="qty-value" id="modal-qty-value">1</span>
+                    <button class="qty-btn" id="modal-qty-increase" type="button">+</button>
+                </div>
+            </div>
+
+            <div class="product-modal-actions">
+                <button class="btn-add-modal" id="modal-add-btn">
+                    <i class="fa fa-cart-plus"></i> Adicionar
+                </button>
+                <button class="btn-info-whats" id="modal-whats-btn">
+                    <i class="fab fa-whatsapp"></i> Mais info
+                </button>
+                <button class="btn-share-whats" id="modal-share-btn">
+                    <i class="fab fa-whatsapp"></i> Compartilhar
+                </button>
+            </div>
+
+        </div>
+    </div>
+    <!-- FIM MODAL DE PRODUTO -->
+
+    <!-- ===== MODAL DE OPÇÕES DO PRODUTO ===== -->
+    <div id="options-modal" onclick="fecharModalOpcoesSeOverlay(event)">
+        <div class="options-modal-box">
+            <button class="product-modal-back" id="options-close-btn">
+                <i class="fa fa-times"></i>
+            </button>
+
+            <p class="product-modal-name" id="options-nome"></p>
+
+            <div id="options-grupos"></div>
+
+            <div class="product-modal-actions" style="margin-top: 16px;">
+                <button class="btn-add-modal" id="options-confirm-btn">
+                    <i class="fa fa-cart-plus"></i> Adicionar - <span id="options-total">R$ 0,00</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CART -->
+    <div class="bg-black/50 w-full h-full fixed top-0 left-0 z-[99] items-center justify-center hidden" id="cart-modal">
+        <div class="bg-white p-5 rounded-md min-w-[90%] md:min-w-[600px] max-h-[90vh] overflow-y-auto">
+            <h2 class="text-center font-bold text-2xl mb-4">Meu pedido</h2>
+
+            <div id="cart-items" class="flex justify-between mb-2 flex-col"></div>
+
+            <p class="font-bold text-lg mt-2">
+                Total: <span id="cart-total" style="color: var(--laranja);">R$ 0,00</span>
+            </p>
+
+            <!-- Etapa de Entrega/Retirada — escondida automaticamente no modo mesa (?mesa=) -->
+            <div id="delivery-type-section">
+                <p class="font-bold mt-4 mb-2">Como quer receber?</p>
+                <div class="flex gap-3 mb-3">
+                    <div class="delivery-option selected" id="opt-entrega" onclick="selecionarEntrega('entrega')">
+                        <i class="fa fa-truck mb-1 block text-xl"></i>
+                        Entrega
+                    </div>
+                    <div class="delivery-option" id="opt-retirada" onclick="selecionarEntrega('retirada')">
+                        <i class="fa fa-store mb-1 block text-xl"></i>
+                        Retirada na loja
+                    </div>
+                </div>
+            </div>
+
+            <!-- Endereço de entrega — escondido automaticamente no modo mesa (?mesa=) -->
+            <div id="address-section">
+                <p class="font-bold mt-2">Endereço de entrega:</p>
+                <input type="text" placeholder="Rua" id="address-rua" class="w-full border-2 p-1 rounded my-1" />
+                <div class="flex gap-2 my-1">
+                    <input type="text" placeholder="Número (se possui)" id="address-numero" class="w-1/2 border-2 p-1 rounded" />
+                    <input type="text" placeholder="Bairro" id="address-bairro" class="w-1/2 border-2 p-1 rounded" />
+                </div>
+                <input type="text" placeholder="Ponto de referência (opcional)" id="address-referencia" class="w-full border-2 p-1 rounded my-1" />
+                <p class="text-red-500 hidden" id="address-warn">Preencha ao menos a rua e o bairro!</p>
+
+                <!-- Aviso informativo de taxa de entrega (modo delivery) -->
+                <p id="taxa-entrega-info">
+                    <i class="fa fa-circle-info"></i>
+                    Taxa de entrega inclusa (Depende do local)
+                </p>
+            </div>
+
+            <!-- Forma de pagamento — no modo mesa fica opcional/escondida, já que a conta fecha com o garçom -->
+            <div id="payment-section">
+                <p class="font-bold mt-4 mb-2">Forma de pagamento:</p>
+                <div class="flex gap-3 mb-3">
+                    <div class="delivery-option selected" id="pag-pix" onclick="selecionarPagamento('Pix')">
+                        <i class="fa fa-qrcode mb-1 block text-xl"></i>
+                        Pix
+                    </div>
+                    <div class="delivery-option" id="pag-dinheiro" onclick="selecionarPagamento('Dinheiro')">
+                        <i class="fa fa-money-bill mb-1 block text-xl"></i>
+                        Dinheiro
+                    </div>
+                    <div class="delivery-option" id="pag-cartao" onclick="selecionarPagamento('Cartão na entrega')">
+                        <i class="fa fa-credit-card mb-1 block text-xl"></i>
+                        Cartão
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between mt-5 w-full">
+                <button id="close-modal-btn" class="text-gray-500 hover:text-gray-700">Fechar</button>
+                <button id="checkout-btn" class="text-white px-4 py-2 rounded font-bold" style="background-color: var(--laranja);">
+                    Finalizar pedido
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- FIM MODAL CART -->
+
+    <!-- Rodapé promocional fixo — presente em todos os sites de clientes do serviço -->
+    <footer id="footer-promo">
+        <a href="https://cardapios-web.vercel.app/" target="_blank" rel="noopener noreferrer">
+            Alugue seu site aqui também
+        </a>
+    </footer>
+
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-loader.js"></script>
+    <script src="script.js"></script>
+
+</body>
+</html>
