@@ -63,6 +63,29 @@ const TEMAS = {
         textoAltLogo: "Logo da churrascaria"
     },
 
+    churrascaria2: {
+        nomeExibicao: "Churrascaria (Brasa)",
+        cores: {
+            principal:        "#D94E1F",
+            principalEscura:  "#A83913",
+            principalClara:   "#FCE4D6",
+            base:             "#1C1512",
+            baseSuave:        "#2E231D",
+            fundo:            "#FBEEE0",
+            destaque:         "#F2A93C",
+            selo:             "#4C6B3F",
+            linha:            "#E8CFA9"
+        },
+        fontes: {
+            titulo: "Bitter",
+            texto: "Mulish",
+            script: "Caveat"
+        },
+        iconeFallbackLogo: "fa-fire",
+        emojiPlaceholder: "🔥",
+        textoAltLogo: "Logo da churrascaria"
+    },
+
     hamburgueria: {
         nomeExibicao: "Hamburgueria",
         cores: {

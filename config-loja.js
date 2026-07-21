@@ -17,7 +17,7 @@
 //   <script src="./config-loja.js"></script>
 // ============================================================
 
-const TEMA = "churrascaria"
+const TEMA = "churrascaria2"
 
 // ------------------------------------------------------------
 // A partir daqui é só aplicação — não precisa editar.
