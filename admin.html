@@ -350,9 +350,9 @@
     </header>
 
     <div class="abas">
-        <button class="aba-btn ativa" data-aba="mesas">Mesas <span class="bolinha" id="bolinha-mesas"></span></button>
-        <button class="aba-btn" data-aba="historico-mesa">Histórico Mesa</button>
-        <button class="aba-btn" data-aba="historico-delivery">Histórico Delivery <span class="bolinha" id="bolinha-historico-delivery"></span></button>
+        <button class="aba-btn" data-aba="mesas" style="display:none;">Mesas <span class="bolinha" id="bolinha-mesas"></span></button>
+        <button class="aba-btn" data-aba="historico-mesa" style="display:none;">Histórico Mesa</button>
+        <button class="aba-btn ativa" data-aba="historico-delivery">Histórico Delivery <span class="bolinha" id="bolinha-historico-delivery"></span></button>
         <button class="aba-btn" data-aba="produtos">Produtos</button>
         <button class="aba-btn" data-aba="loja">Dados da loja</button>
         <button class="aba-btn" data-aba="dashboard">Dashboard</button>
@@ -360,7 +360,7 @@
 
     <main>
         <!-- ===== ABA MESAS ===== -->
-        <section class="painel-secao ativa" id="secao-mesas">
+        <section class="painel-secao" id="secao-mesas">
             <div id="msg-mesas"></div>
             <div id="lista-mesas"></div>
         </section>
@@ -373,7 +373,7 @@
         </section>
 
         <!-- ===== ABA HISTÓRICO DELIVERY ===== -->
-        <section class="painel-secao" id="secao-historico-delivery">
+        <section class="painel-secao ativa" id="secao-historico-delivery">
             <p style="font-size:13px;color:#8a7361;margin:0 0 14px;">Os 30 pedidos de delivery/retirada mais recentes ficam guardados por loja. O texto de cada um é o exato que foi enviado ao WhatsApp no momento do pedido.</p>
             <div id="msg-historico-delivery"></div>
             <div id="lista-historico-delivery"></div>
@@ -828,8 +828,7 @@ async function iniciarPainel(user) {
     preencherFormularioLoja()
     await carregarDashboard()
     await carregarProdutos()
-    await carregarMesas()
-    inscreverAtualizacoesMesas()
+    await carregarHistoricoDelivery()
     inscreverAtualizacoesHistoricoDelivery()
 }
 
