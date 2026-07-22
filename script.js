@@ -174,6 +174,7 @@ function criarCardProduto(produto) {
     const precoFormatado = produto.preco.toFixed(2).replace(".", ",")
     const esgotado = !!produto.esgotado
     const semSetas = !!produto.esconder_setas
+    const esconderPreco = semSetas && produto.preco === 0
     const badgeOferta = produto.oferta ? `<span class="badge-oferta">Oferta</span>` : ""
     const badgeEsgotado = esgotado ? `<span class="badge-esgotado">Esgotado</span>` : ""
 
@@ -192,7 +193,7 @@ function criarCardProduto(produto) {
             </p>
             <p class="text-sm text-gray-600">${produto.desc}</p>
             <div class="product-footer">
-                <p class="font-bold text-lg text-laranja">R$ ${precoFormatado}</p>
+                ${esconderPreco ? "<span></span>" : `<p class="font-bold text-lg text-laranja">R$ ${precoFormatado}</p>`}
                 <div class="product-footer-actions">
                     ${semSetas ? "" : `
                     <div class="qty-selector" data-qty="1">
