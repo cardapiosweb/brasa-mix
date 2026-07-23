@@ -644,6 +644,17 @@ document.getElementById("prod-tem-opcoes").addEventListener("change", (e) => {
     document.getElementById("opcoes-editor").style.display = e.target.checked ? "block" : "none"
 })
 
+// Se o preço-base for zerado (ex: produto com variantes de preço,
+// tipo o açaí), marca "esconder setas" automaticamente — evita o
+// lojista esquecer disso e o cliente ver R$0,00 no card. Só dispara
+// quando o campo é digitado/alterado, então não sobrescreve uma
+// escolha manual feita antes ao reabrir um produto pra edição.
+document.getElementById("prod-preco").addEventListener("input", (e) => {
+    if (parseFloat(e.target.value) === 0) {
+        document.getElementById("prod-esconder-setas").checked = true
+    }
+})
+
 document.getElementById("btn-novo-grupo-opcao").addEventListener("click", () => {
     opcoesProdutoAtual.push({
         nome: "",

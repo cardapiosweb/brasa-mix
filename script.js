@@ -242,7 +242,15 @@ const optRetirada = document.getElementById("opt-retirada")
 
 document.getElementById("modal-qty-increase").addEventListener("click", () => {
     const seletor = document.getElementById("modal-qty-selector")
-    const qtd = parseInt(seletor.getAttribute("data-qty"), 10) + 1
+    const qtdAtual = parseInt(seletor.getAttribute("data-qty"), 10)
+    const disponivel = estoqueDisponivel(produtoAtual.id)
+
+    if (qtdAtual + 1 > disponivel) {
+        avisarEstoqueInsuficiente(disponivel)
+        return
+    }
+
+    const qtd = qtdAtual + 1
     seletor.setAttribute("data-qty", qtd)
     document.getElementById("modal-qty-value").textContent = qtd
 })
@@ -367,6 +375,37 @@ function selecionarPagamento(tipo) {
 
 
 // ===========================
+// VALIDAÇÃO DE ESTOQUE EM TEMPO REAL
+// Calcula quanto ainda pode ser adicionado de um produto,
+// descontando o que já está no carrinho (soma todas as variantes/
+// opções desse mesmo produto, já que compartilham o mesmo estoque).
+// Produtos com estoque = null/undefined não são controlados (Infinity).
+// ===========================
+function estoqueDisponivel(produtoId) {
+    const produto = produtos.find(p => String(p.id) === String(produtoId))
+    if (!produto || produto.estoque === null || produto.estoque === undefined) return Infinity
+
+    const jaNoCarrinho = cart
+        .filter(item => String(item.id) === String(produtoId))
+        .reduce((soma, item) => soma + item.quantity, 0)
+
+    return produto.estoque - jaNoCarrinho
+}
+
+function avisarEstoqueInsuficiente(disponivel) {
+    Toastify({
+        text: disponivel > 0
+            ? `😕 Só temos ${disponivel} unidade(s) disponível(is) desse produto.`
+            : `😕 Esse produto está esgotado no momento.`,
+        duration: 2200,
+        gravity: "top",
+        position: "right",
+        style: { background: "#6b7280", borderRadius: "8px" },
+    }).showToast()
+}
+
+
+// ===========================
 // ADICIONAR AO CARRINHO
 // (usa "delegação de evento" no #menu, funciona mesmo com os
 // cards sendo criados dinamicamente pelo renderizarProdutos)
@@ -376,8 +415,22 @@ document.getElementById("menu").addEventListener("click", function (event) {
     const decreaseBtn = event.target.closest(".qty-decrease")
     if (increaseBtn || decreaseBtn) {
         const seletor = event.target.closest(".qty-selector")
+        const btnCarrinho = seletor.parentElement.querySelector(".add-to-cart-btn")
+        const produtoId = btnCarrinho ? btnCarrinho.getAttribute("data-id") : null
+
         let qtd = parseInt(seletor.getAttribute("data-qty"), 10)
-        qtd = increaseBtn ? qtd + 1 : Math.max(1, qtd - 1)
+
+        if (increaseBtn) {
+            const disponivel = estoqueDisponivel(produtoId)
+            if (qtd + 1 > disponivel) {
+                avisarEstoqueInsuficiente(disponivel)
+                return
+            }
+            qtd += 1
+        } else {
+            qtd = Math.max(1, qtd - 1)
+        }
+
         seletor.setAttribute("data-qty", qtd)
         seletor.querySelector(".qty-value").textContent = qtd
         return
@@ -419,6 +472,12 @@ document.getElementById("menu").addEventListener("click", function (event) {
 })
 
 function addToCart(id, name, price, btnElement, quantity = 1, opcoesSelecionadas = null) {
+    const disponivel = estoqueDisponivel(id)
+    if (quantity > disponivel) {
+        avisarEstoqueInsuficiente(disponivel)
+        return
+    }
+
     const precoAdicional = opcoesSelecionadas
         ? opcoesSelecionadas.reduce((soma, item) => soma + item.preco_adicional, 0)
         : 0
@@ -532,7 +591,16 @@ cartItemsContainer.addEventListener("click", function (event) {
 
 function increaseItem(chave) {
     const item = cart.find(i => i.chave === chave)
-    if (item) { item.quantity += 1; updateCartModal() }
+    if (!item) return
+
+    const disponivel = estoqueDisponivel(item.id)
+    if (disponivel < 1) {
+        avisarEstoqueInsuficiente(0)
+        return
+    }
+
+    item.quantity += 1
+    updateCartModal()
 }
 
 function decreaseItem(chave) {
