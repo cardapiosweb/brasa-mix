@@ -235,13 +235,16 @@
             display: flex;
             gap: 10px;
             overflow-x: auto;
-            padding: 4px 4px 18px;
+            padding: 4px 4px 22px;
             scrollbar-width: thin;
+            scrollbar-color: var(--linha) transparent;
         }
-        .categorias-nav::-webkit-scrollbar { height: 6px; }
+        .categorias-nav::-webkit-scrollbar { height: 4px; }
+        .categorias-nav::-webkit-scrollbar-track { background: transparent; }
         .categorias-nav::-webkit-scrollbar-thumb {
             background: var(--linha);
             border-radius: 999px;
+            opacity: 0.5;
         }
         .categoria-nav-btn {
             flex: 0 0 auto;
