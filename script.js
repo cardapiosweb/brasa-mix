@@ -902,6 +902,7 @@ function abrirProduto(produto) {
 
     document.getElementById("modal-qty-selector").setAttribute("data-qty", "1")
     document.getElementById("modal-qty-value").textContent = "1"
+    document.getElementById("modal-qty-selector").style.display = produto.esconder_setas ? "none" : "flex"
 
     const modalJaAberto = document.getElementById("product-modal").classList.contains("open")
 
@@ -926,7 +927,9 @@ function abrirProduto(produto) {
 
     document.getElementById("modal-name").textContent = produto.nome
     document.getElementById("modal-desc").textContent = produto.desc
-    document.getElementById("modal-price").textContent = "R$ " + produto.preco.toFixed(2).replace(".", ",")
+
+    const esconderPrecoModal = produto.esconder_setas && produto.preco === 0
+    document.getElementById("modal-price").textContent = esconderPrecoModal ? "" : "R$ " + produto.preco.toFixed(2).replace(".", ",")
 
     const modalAddBtn = document.getElementById("modal-add-btn")
     if (produto.esgotado) {
