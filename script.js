@@ -265,9 +265,17 @@ document.getElementById("modal-qty-decrease").addEventListener("click", () => {
 // MODO MESA (?mesa=NN na URL)
 // Quando presente, o site sabe que o pedido é de uma mesa
 // específica: esconde entrega/retirada, endereço e pagamento.
+//
+// SEGURANÇA: o valor vem direto da URL, digitável por qualquer
+// pessoa. Sem sanitizar, alguém poderia colocar HTML/script no
+// parâmetro (ex: ?mesa=<img src=x onerror=...>), que ficaria
+// gravado no banco e executaria no navegador do LOJISTA quando
+// ele abrisse o painel admin. Por isso: só letras/números, até
+// 10 caracteres.
 // ===========================
 const paramsUrl = new URLSearchParams(window.location.search)
-const mesaAtual = paramsUrl.get("mesa")
+const mesaBruta = paramsUrl.get("mesa")
+const mesaAtual = mesaBruta ? mesaBruta.replace(/[^a-zA-Z0-9]/g, "").slice(0, 10) : null
 const modoMesa = !!mesaAtual
 
 function aplicarModoMesa() {
@@ -358,7 +366,8 @@ function selecionarEntrega(tipo) {
         optEntrega.classList.remove("selected")
         addressSection.style.display = "none"
         addressWarn.classList.add("hidden")
-        addressInput.classList.remove("border-red-500")
+        addressRua.classList.remove("border-red-500")
+        addressBairro.classList.remove("border-red-500")
     }
 }
 
@@ -513,7 +522,7 @@ function addToCart(id, name, price, btnElement, quantity = 1, opcoesSelecionadas
         position: "right",
         stopOnFocus: false,
         style: {
-            background: loja.corPrincipal,
+            background: loja.corPrincipal || "var(--laranja)",
             borderRadius: "8px",
             fontSize: "14px",
         },
@@ -639,6 +648,11 @@ addressBairro.addEventListener("input", limparAvisoEndereco)
 // controlados, então são ignorados. Ao chegar a 0, marca esgotado
 // automaticamente (assim o produto já aparece indisponível pro
 // próximo cliente, sem precisar o lojista mexer no admin).
+//
+// CORRIGIDO: também atualiza o array local `produtos`, não só o
+// banco. Sem isso, se o cliente pedisse o mesmo item de novo na
+// mesma visita (sem recarregar a página), a validação de estoque
+// em tempo real ainda enxergava o número antigo.
 // ===========================
 async function baixarEstoque(itensCarrinho) {
     for (const item of itensCarrinho) {
@@ -656,6 +670,13 @@ async function baixarEstoque(itensCarrinho) {
             if (novoEstoque === 0) atualizacao.esgotado = true
 
             await supabaseClient.from("produtos").update(atualizacao).eq("id", item.id)
+
+            // Mantém o array local em sincronia pro resto da sessão
+            const produtoLocal = produtos.find(p => String(p.id) === String(item.id))
+            if (produtoLocal) {
+                produtoLocal.estoque = novoEstoque
+                if (novoEstoque === 0) produtoLocal.esgotado = true
+            }
         } catch (err) {
             console.error("Erro ao baixar estoque do produto", item.id, err)
         }
@@ -669,8 +690,13 @@ async function baixarEstoque(itensCarrinho) {
 // Modo mesa: grava o pedido em `pedidos_mesa` no Supabase, sem WhatsApp;
 // o atendimento acompanha e finaliza a comanda pelo painel admin (é lá
 // que a baixa de estoque da mesa acontece, na finalização da comanda).
+//
+// CORRIGIDO: o botão fica desabilitado durante todo o processamento
+// (não só na parte da mesa), evitando pedido duplicado por duplo clique.
 // ===========================
 checkoutBtn.addEventListener("click", async function () {
+
+    if (checkoutBtn.disabled) return
 
     const isOpen = checkStoreOpen()
     if (!isOpen) {
@@ -730,7 +756,7 @@ checkoutBtn.addEventListener("click", async function () {
             duration: 2000,
             gravity: "top",
             position: "right",
-            style: { background: loja.corPrincipal, borderRadius: "8px" },
+            style: { background: loja.corPrincipal || "var(--laranja)", borderRadius: "8px" },
         }).showToast()
 
         cart = []
@@ -748,104 +774,110 @@ checkoutBtn.addEventListener("click", async function () {
         return
     }
 
-    const cartItems = cart.map(item => {
-        const linhaOpcoes = item.opcoes && item.opcoes.length
-            ? "\n  " + agruparOpcoesPorGrupo(item.opcoes).join("\n  ")
-            : ""
-        const produtoRef = produtos.find(p => String(p.id) === String(item.id))
-        const esconderQtd = produtoRef && produtoRef.esconder_setas && item.quantity === 1
-        const linhaQtd = esconderQtd ? "" : `Qtd: ${item.quantity} | `
-        return `- ${item.name}${linhaOpcoes}\n  ${linhaQtd}R$ ${(item.price * item.quantity).toFixed(2).replace(".", ",")}`
-    }).join("\n")
+    checkoutBtn.disabled = true
 
-    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
-    const totalFormatado = total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
-
-    const agora = new Date()
-    const dataHoraFormatada = agora.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })
-
-    const linhaRuaNumero = addressRua.value.trim() + (addressNumero.value.trim() ? ` - nº ${addressNumero.value.trim()}` : "")
-
-    const enderecoCompleto = [
-        `Endereço: ${linhaRuaNumero}`,
-        addressBairro.value.trim() ? `Bairro: ${addressBairro.value.trim()}` : "",
-        addressReferencia.value.trim() ? `Referência: ${addressReferencia.value.trim()}` : ""
-    ].filter(Boolean).join("\n")
-
-    const modoEntrega = tipoEntrega === "entrega"
-        ? `*Entrega*\n${enderecoCompleto}`
-        : `*Retirada na loja*`
-
-    const linhaPagamento = `\n*Pagamento:* ${tipoPagamento}`
-
-    const message =
-        `*Pedido - ${loja.nome}*\n` +
-        `Data/Hora: ${dataHoraFormatada}\n` +
-        `--------------------------------\n` +
-        `${cartItems}\n` +
-        `--------------------------------\n` +
-        `*Total: ${totalFormatado}*\n` +
-        `\n${modoEntrega}\n` +
-        linhaPagamento
-
-    window.open(`https://wa.me/${loja.whatsapp}?text=${encodeURIComponent(message)}`, "_blank")
-
-    // Soma os itens (mesmo formato usado no histórico de mesa) —
-    // reaproveitado tanto pro relatório do dia quanto pro histórico.
-    const itensSomados = {}
-    cart.forEach(item => {
-        const chave = item.chave || item.name
-        if (!itensSomados[chave]) itensSomados[chave] = { name: item.name, opcoes: item.opcoes, quantity: 0, price: item.price }
-        itensSomados[chave].quantity += item.quantity
-    })
-
-    // Alimenta o relatório do dia (Dashboard). Tabela leve, se autolimpa
-    // sozinha — não pode travar nada, o WhatsApp já foi enviado na linha
-    // acima, isso é só um registro extra pro dono acompanhar o dia.
     try {
-        await supabaseClient.from("relatorio_dia").insert({
-            loja_id: loja.id,
-            origem: tipoEntrega,   // 'entrega' ou 'retirada'
-            itens: itensSomados,
-            total
+        const cartItems = cart.map(item => {
+            const linhaOpcoes = item.opcoes && item.opcoes.length
+                ? "\n  " + agruparOpcoesPorGrupo(item.opcoes).join("\n  ")
+                : ""
+            const produtoRef = produtos.find(p => String(p.id) === String(item.id))
+            const esconderQtd = produtoRef && produtoRef.esconder_setas && item.quantity === 1
+            const linhaQtd = esconderQtd ? "" : `Qtd: ${item.quantity} | `
+            return `- ${item.name}${linhaOpcoes}\n  ${linhaQtd}R$ ${(item.price * item.quantity).toFixed(2).replace(".", ",")}`
+        }).join("\n")
+
+        const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
+        const totalFormatado = total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+
+        const agora = new Date()
+        const dataHoraFormatada = agora.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })
+
+        const linhaRuaNumero = addressRua.value.trim() + (addressNumero.value.trim() ? ` - nº ${addressNumero.value.trim()}` : "")
+
+        const enderecoCompleto = [
+            `Endereço: ${linhaRuaNumero}`,
+            addressBairro.value.trim() ? `Bairro: ${addressBairro.value.trim()}` : "",
+            addressReferencia.value.trim() ? `Referência: ${addressReferencia.value.trim()}` : ""
+        ].filter(Boolean).join("\n")
+
+        const modoEntrega = tipoEntrega === "entrega"
+            ? `*Entrega*\n${enderecoCompleto}`
+            : `*Retirada na loja*`
+
+        const linhaPagamento = `\n*Pagamento:* ${tipoPagamento}`
+
+        const message =
+            `*Pedido - ${loja.nome}*\n` +
+            `Data/Hora: ${dataHoraFormatada}\n` +
+            `--------------------------------\n` +
+            `${cartItems}\n` +
+            `--------------------------------\n` +
+            `*Total: ${totalFormatado}*\n` +
+            `\n${modoEntrega}\n` +
+            linhaPagamento
+
+        window.open(`https://wa.me/${loja.whatsapp}?text=${encodeURIComponent(message)}`, "_blank")
+
+        // Soma os itens (mesmo formato usado no histórico de mesa) —
+        // reaproveitado tanto pro relatório do dia quanto pro histórico.
+        const itensSomados = {}
+        cart.forEach(item => {
+            const chave = item.chave || item.name
+            if (!itensSomados[chave]) itensSomados[chave] = { name: item.name, opcoes: item.opcoes, quantity: 0, price: item.price }
+            itensSomados[chave].quantity += item.quantity
         })
-    } catch (err) {
-        console.error("Erro ao registrar no relatório do dia", err)
+
+        // Alimenta o relatório do dia (Dashboard). Tabela leve, se autolimpa
+        // sozinha — não pode travar nada, o WhatsApp já foi enviado na linha
+        // acima, isso é só um registro extra pro dono acompanhar o dia.
+        try {
+            await supabaseClient.from("relatorio_dia").insert({
+                loja_id: loja.id,
+                origem: tipoEntrega,   // 'entrega' ou 'retirada'
+                itens: itensSomados,
+                total
+            })
+        } catch (err) {
+            console.error("Erro ao registrar no relatório do dia", err)
+        }
+
+        // Grava no histórico de delivery (mesma lógica e limite do histórico
+        // de mesa — a aba "Histórico Delivery" no admin lê daqui, filtrando
+        // origem = 'delivery' e mostrando só os 30 mais recentes). Guarda o
+        // texto EXATO que foi enviado ao WhatsApp. Não bloqueia o fluxo se
+        // falhar, o pedido já foi enviado.
+        try {
+            await supabaseClient.from("comandas_finalizadas").insert({
+                loja_id: loja.id,
+                origem: "delivery",
+                mesa: null,
+                mensagem: message,
+                total,
+                itens: itensSomados
+            })
+        } catch (err) {
+            console.error("Erro ao salvar histórico de delivery", err)
+        }
+
+        // Baixa o estoque dos produtos comprados (delivery/retirada finaliza
+        // aqui mesmo, ao contrário da mesa, que só finaliza depois no admin)
+        await baixarEstoque(cart)
+
+        cart = []
+        tipoEntrega = "entrega"
+        tipoPagamento = "Pix"
+        selecionarEntrega("entrega")
+        selecionarPagamento("Pix")
+        addressRua.value = ""
+        addressNumero.value = ""
+        addressBairro.value = ""
+        addressReferencia.value = ""
+        updateCartModal()
+        fecharModalCarrinho()
+    } finally {
+        checkoutBtn.disabled = false
     }
-
-    // Grava no histórico de delivery (mesma lógica e limite do histórico
-    // de mesa — a aba "Histórico Delivery" no admin lê daqui, filtrando
-    // origem = 'delivery' e mostrando só os 30 mais recentes). Guarda o
-    // texto EXATO que foi enviado ao WhatsApp. Não bloqueia o fluxo se
-    // falhar, o pedido já foi enviado.
-    try {
-        await supabaseClient.from("comandas_finalizadas").insert({
-            loja_id: loja.id,
-            origem: "delivery",
-            mesa: null,
-            mensagem: message,
-            total,
-            itens: itensSomados
-        })
-    } catch (err) {
-        console.error("Erro ao salvar histórico de delivery", err)
-    }
-
-    // Baixa o estoque dos produtos comprados (delivery/retirada finaliza
-    // aqui mesmo, ao contrário da mesa, que só finaliza depois no admin)
-    baixarEstoque(cart)
-
-    cart = []
-    tipoEntrega = "entrega"
-    tipoPagamento = "Pix"
-    selecionarEntrega("entrega")
-    selecionarPagamento("Pix")
-    addressRua.value = ""
-    addressNumero.value = ""
-    addressBairro.value = ""
-    addressReferencia.value = ""
-    updateCartModal()
-    fecharModalCarrinho()
 })
 
 
