@@ -220,15 +220,6 @@ function criarCardProduto(produto) {
     return card
 }
 
-// ===========================
-// FALLBACK DE IMAGEM DE PRODUTO
-// Usado no onerror de <img> do card e da galeria do modal — troca
-// a imagem quebrada por um placeholder com o tamanho certo.
-// ===========================
-function imagemFallbackProduto(imgElement, tamanho) {
-    imgElement.onerror = null // evita loop se o placeholder também falhar
-    imgElement.src = `https://placehold.co/${tamanho}/A9321E/white?text=🍕`
-}
 
 
 // ===========================
