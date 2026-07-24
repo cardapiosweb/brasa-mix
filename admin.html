@@ -1079,13 +1079,15 @@ async function moverProduto(id, direcao) {
     ;[produtosAtuais[indice], produtosAtuais[indiceVizinho]] = [produtosAtuais[indiceVizinho], produtosAtuais[indice]]
     renderizarListaProdutos()
 
+    const atualizacoes = []
     for (let i = 0; i < produtosAtuais.length; i++) {
         const p = produtosAtuais[i]
         if (p.ordem !== i) {
-            await sb.from("produtos").update({ ordem: i }).eq("id", p.id)
             p.ordem = i
+            atualizacoes.push(sb.from("produtos").update({ ordem: i }).eq("id", p.id))
         }
     }
+    if (atualizacoes.length) await Promise.all(atualizacoes)
 }
 
 const modalProduto = document.getElementById("modal-produto")
@@ -1352,7 +1354,7 @@ async function finalizarMesa(mesa) {
 }
 
 async function baixarEstoque(quantidadesPorProduto, cliente) {
-    for (const [id, qtdComprada] of Object.entries(quantidadesPorProduto)) {
+    const tarefas = Object.entries(quantidadesPorProduto).map(async ([id, qtdComprada]) => {
         try {
             const { data: prod, error: erroBusca } = await cliente
                 .from("produtos")
@@ -1360,7 +1362,7 @@ async function baixarEstoque(quantidadesPorProduto, cliente) {
                 .eq("id", id)
                 .single()
 
-            if (erroBusca || !prod || prod.estoque === null || prod.estoque === undefined) continue
+            if (erroBusca || !prod || prod.estoque === null || prod.estoque === undefined) return
 
             const novoEstoque = Math.max(0, prod.estoque - qtdComprada)
             const atualizacao = { estoque: novoEstoque }
@@ -1370,7 +1372,8 @@ async function baixarEstoque(quantidadesPorProduto, cliente) {
         } catch (err) {
             console.error("Erro ao baixar estoque do produto", id, err)
         }
-    }
+    })
+    await Promise.all(tarefas)
 }
 
 function montarMensagemFechamento(mesa, pedidos) {
