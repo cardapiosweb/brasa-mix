@@ -6,23 +6,16 @@
 <meta name="color-scheme" content="light">
 <title>Painel do cardápio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
-<!-- Fonte estática de reserva (usada se o JS do tema falhar por algum motivo) -->
 <link href="https://fonts.googleapis.com/css2?family=Bitter:wght@600;700;800&family=Mulish:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- ===== SISTEMA DE TEMAS =====
-     Mesmo config-loja.js usado pelo index.html — garante que o painel
-     use as mesmas cores/fontes do site do cliente. -->
 <link id="fontes-tema" rel="stylesheet" href="" />
 <script src="./temas.js"></script>
 <script src="./config-loja.js"></script>
 
 <style>
     :root{
-        /* Estes valores são apenas RESERVA — na prática são sempre
-           sobrescritos pelo config-loja.js de acordo com o tema
-           escolhido pra este cliente. Não precisa editar aqui. */
         --tinta:#A9321E; --tinta-escura:#7A2416; --tinta-clara:#F7E4DC;
         --carvao:#241B16; --creme:#FBF3E4; --linha:#E4D5B7;
         --ok:#4C6B3F; --erro:#B3261E;
@@ -35,7 +28,6 @@
     button{font-family:inherit;cursor:pointer;}
     input,select,textarea{font-family:inherit;}
 
-    /* ---------- TELA DE LOGIN ---------- */
     #tela-login{
         min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
     }
@@ -59,7 +51,6 @@
     .btn-primario:disabled{opacity:.6;cursor:not-allowed;}
     #erro-login{color:var(--erro);font-size:13px;margin-top:12px;display:none;}
 
-    /* ---------- PAINEL ---------- */
     #tela-painel{display:none;}
     header.topo{
         background:var(--carvao);color:white;padding:14px 20px;
@@ -98,7 +89,7 @@
         header.topo h1{font-size:16px;}
         main{padding:14px;}
         .card{padding:16px;}
-        .campo input, .campo select, .campo textarea{font-size:16px;} /* evita zoom automático no iOS */
+        .campo input, .campo select, .campo textarea{font-size:16px;}
         .aba-btn{font-size:13px;padding:9px 13px;}
         .categoria-linha{
         grid-template-columns:1fr auto;
@@ -112,7 +103,6 @@
         .grupo-opcao-linha2 .campo input,
         .categoria-linha input{font-size:16px;}
 
-        /* área de toque maior pros botões pequenos no celular */
         .categoria-setas button,
         .produto-setas button{width:32px;height:28px;}
         .item-opcao-remover{width:36px;height:36px;}
@@ -165,14 +155,12 @@
     .btn-icone:hover{border-color:var(--tinta);color:var(--tinta);}
     .btn-icone.apagar:hover{border-color:var(--erro);color:var(--erro);}
 
-    /* ===== Cabeçalho de categoria na lista de produtos ===== */
     .categoria-header{
         font-size:13px;font-weight:800;color:#8a7361;text-transform:uppercase;
         letter-spacing:.04em;margin:18px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--linha);
     }
     .categoria-header:first-child{margin-top:0;}
 
-    /* ===== Gerenciamento de categorias (aba Dados da loja) ===== */
     .categoria-linha{
     display:grid;
     grid-template-columns:auto 1fr 130px auto;
@@ -190,7 +178,6 @@
     .categoria-setas button:hover{border-color:var(--tinta);color:var(--tinta);}
     .categoria-setas button:disabled{opacity:.3;cursor:not-allowed;}
 
-    /* ---------- MODAL DE PRODUTO ---------- */
     #modal-produto{
         display:none;position:fixed;inset:0;background:rgba(36,27,22,.6);z-index:200;
         align-items:center;justify-content:center;padding:16px;
@@ -202,7 +189,6 @@
     .linha-check label{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;}
     .modal-acoes{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;}
     .btn-secundario{background:none;border:1.5px solid var(--linha);border-radius:8px;padding:10px 18px;font-weight:700;font-size:14px;}
-    /* ===== Editor de opções do produto (sabores, adicionais) ===== */
     .grupo-opcao{
         border:1.5px solid var(--linha);border-radius:12px;padding:0;margin-top:14px;background:white;overflow:hidden;
     }
@@ -247,7 +233,6 @@
     .aviso-erro{background:#FBEAE9;color:var(--erro);}
     #salvando-loja{font-size:13px;color:var(--ok);margin-left:10px;display:none;}
 
-    /* ---------- UPLOAD DE IMAGEM ---------- */
     .upload-area{display:flex;align-items:center;gap:12px;}
     .preview-img{
         width:64px;height:64px;border-radius:8px;object-fit:cover;background:#f1e9dd;
@@ -262,7 +247,6 @@
     .upload-status.erro{color:var(--erro);}
     .upload-status.ok{color:var(--ok);}
 
-    /* ===== Galeria de fotos do produto (múltiplas fotos) ===== */
     .fotos-galeria{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
     .foto-item{position:relative;width:64px;height:64px;}
     .foto-item img{width:100%;height:100%;border-radius:8px;object-fit:cover;border:1px solid var(--linha);background:#f1e9dd;}
@@ -272,7 +256,6 @@
         display:flex;align-items:center;justify-content:center;
     }
 
-    /* ===== Mesas / comandas ===== */
     .mesa-card{background:white;border:1px solid var(--linha);border-radius:14px;padding:20px;margin-bottom:16px;}
     .mesa-card h2{font-size:17px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
     .mesa-total{color:var(--tinta);}
@@ -289,8 +272,8 @@
     .mesa-acoes{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
     .btn-mesa-finalizar{background:var(--ok);color:white;border:none;border-radius:8px;padding:10px 18px;font-weight:700;font-size:14px;}
     .btn-mesa-finalizar:hover{background:#395530;}
+    .btn-mesa-finalizar:disabled{opacity:.6;cursor:not-allowed;}
 
-    /* ===== Histórico de comandas ===== */
     .historico-card{background:white;border:1px solid var(--linha);border-radius:14px;padding:18px;margin-bottom:14px;}
     .historico-topo{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
     .historico-topo .mesa-nome{font-weight:800;font-size:15px;}
@@ -310,7 +293,6 @@
     .btn-copiar{background:none;border:1.5px solid var(--linha);color:var(--carvao);}
     .btn-copiar:hover{border-color:var(--tinta);color:var(--tinta);}
 
-    /* ===== Dashboard ===== */
     .dash-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px;}
     @media(max-width:700px){.dash-cards{grid-template-columns:1fr;}}
     .dash-card{background:white;border:1px solid var(--linha);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:6px;}
@@ -321,7 +303,6 @@
 </head>
 <body>
 
-<!-- ==================== TELA DE LOGIN ==================== -->
 <div id="tela-login">
     <div class="caixa-login">
         <h1>Painel do cardápio</h1>
@@ -339,7 +320,6 @@
     </div>
 </div>
 
-<!-- ==================== PAINEL (após login) ==================== -->
 <div id="tela-painel">
     <header class="topo">
         <div>
@@ -359,27 +339,23 @@
     </div>
 
     <main>
-        <!-- ===== ABA MESAS ===== -->
         <section class="painel-secao" id="secao-mesas">
             <div id="msg-mesas"></div>
             <div id="lista-mesas"></div>
         </section>
 
-        <!-- ===== ABA HISTÓRICO MESA ===== -->
         <section class="painel-secao" id="secao-historico-mesa">
             <p style="font-size:13px;color:#8a7361;margin:0 0 14px;">As 30 comandas de mesa mais recentes ficam guardadas por loja. O texto de cada uma é o exato que foi enviado ao WhatsApp no momento da finalização.</p>
             <div id="msg-historico-mesa"></div>
             <div id="lista-historico-mesa"></div>
         </section>
 
-        <!-- ===== ABA HISTÓRICO DELIVERY ===== -->
         <section class="painel-secao ativa" id="secao-historico-delivery">
             <p style="font-size:13px;color:#8a7361;margin:0 0 14px;">Os 30 pedidos de delivery/retirada mais recentes ficam guardados por loja. O texto de cada um é o exato que foi enviado ao WhatsApp no momento do pedido.</p>
             <div id="msg-historico-delivery"></div>
             <div id="lista-historico-delivery"></div>
         </section>
 
-        <!-- ===== ABA PRODUTOS ===== -->
         <section class="painel-secao" id="secao-produtos">
             <div class="barra-acoes">
                 <div id="msg-produtos"></div>
@@ -389,7 +365,6 @@
             <div id="lista-produtos"></div>
         </section>
 
-        <!-- ===== ABA DADOS DA LOJA ===== -->
         <section class="painel-secao" id="secao-loja">
             <div class="card">
                 <h2>Identidade</h2>
@@ -444,7 +419,6 @@
                 <span id="salvando-loja">Salvo ✓</span>
             </div>
 
-            <!-- ===== Categorias do cardápio (ordem usada no site e no admin) ===== -->
             <div class="card">
                 <h2>Categorias do cardápio</h2>
                 <p style="font-size:13px;color:#8a7361;margin:-8px 0 14px;">Use as setas pra reordenar — é essa ordem que aparece no site e na lista de produtos.</p>
@@ -458,7 +432,6 @@
             </div>
         </section>
 
-        <!-- ===== ABA DASHBOARD ===== -->
         <section class="painel-secao" id="secao-dashboard">
             <div id="msg-dashboard"></div>
             <div class="dash-cards">
@@ -480,7 +453,6 @@
     </main>
 </div>
 
-<!-- ==================== MODAL: CRIAR/EDITAR PRODUTO ==================== -->
 <div id="modal-produto">
     <div class="modal-box">
         <h2 id="modal-titulo">Novo produto</h2>
@@ -538,6 +510,21 @@ let categoriasAtuais = []
 let canalMesasInscrito = false
 
 // ============================================================
+// SEGURANÇA: escapa texto antes de inserir via innerHTML.
+// O campo "mesa" vem originalmente de ?mesa= na URL do site
+// público (digitável por qualquer pessoa). Mesmo já sendo
+// filtrado na origem (script.js só aceita letras/números), essa
+// função é uma segunda camada de proteção aqui no admin — cobre
+// qualquer registro que já exista no banco de antes da correção,
+// ou uma inserção feita direto pela API sem passar pelo site.
+// ============================================================
+function escapeHtml(texto) {
+    return String(texto).replace(/[&<>"']/g, c => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[c]))
+}
+
+// ============================================================
 // UPLOAD DE IMAGEM (Supabase Storage, bucket "midia")
 // ============================================================
 async function subirImagem(file, prefixo) {
@@ -560,8 +547,6 @@ async function subirImagem(file, prefixo) {
     return data.publicUrl
 }
 
-// Liga um <input type=file> a um preview + campo escondido de URL,
-// fazendo o upload assim que o usuário escolhe uma imagem.
 function conectarUpload(inputId, statusId, previewId, hiddenId, prefixo) {
     document.getElementById(inputId).addEventListener("change", async (e) => {
         const file = e.target.files[0]
@@ -635,8 +620,6 @@ function removerFotoProduto(i) {
 
 // ============================================================
 // EDITOR DE OPÇÕES DO PRODUTO (sabores, adicionais etc.)
-// Formato salvo em produtos.opcoes:
-// [{ nome, obrigatorio, min, max, itens: [{ nome, preco_adicional }] }]
 // ============================================================
 let opcoesProdutoAtual = []
 
@@ -644,11 +627,6 @@ document.getElementById("prod-tem-opcoes").addEventListener("change", (e) => {
     document.getElementById("opcoes-editor").style.display = e.target.checked ? "block" : "none"
 })
 
-// Se o preço-base for zerado (ex: produto com variantes de preço,
-// tipo o açaí), marca "esconder setas" automaticamente — evita o
-// lojista esquecer disso e o cliente ver R$0,00 no card. Só dispara
-// quando o campo é digitado/alterado, então não sobrescreve uma
-// escolha manual feita antes ao reabrir um produto pra edição.
 document.getElementById("prod-preco").addEventListener("input", (e) => {
     if (parseFloat(e.target.value) === 0) {
         document.getElementById("prod-esconder-setas").checked = true
@@ -808,7 +786,6 @@ document.getElementById("btn-sair").addEventListener("click", async () => {
     location.reload()
 })
 
-// Se já tiver sessão salva no navegador, entra direto
 sb.auth.getSession().then(({ data }) => {
     if (data.session) iniciarPainel(data.session.user)
 })
@@ -932,8 +909,6 @@ document.getElementById("btn-salvar-loja").addEventListener("click", async () =>
 
 // ============================================================
 // ABA "DADOS DA LOJA" — Categorias do cardápio
-// (define a ordem usada tanto no site público quanto aqui no
-// admin, na lista de produtos)
 // ============================================================
 function renderizarCategorias() {
     const lista = document.getElementById("lista-categorias")
@@ -1002,7 +977,7 @@ document.getElementById("btn-salvar-categorias").addEventListener("click", async
     lojaAtual.categorias = categoriasParaSalvar
     categoriasAtuais = categoriasParaSalvar.map(c => ({ ...c }))
     renderizarCategorias()
-    renderizarListaProdutos() // reflete a nova ordem na lista de produtos também
+    renderizarListaProdutos()
 
     const selo = document.getElementById("salvando-categorias")
     selo.style.display = "inline"
@@ -1029,9 +1004,6 @@ async function carregarProdutos() {
     renderizarListaProdutos()
 }
 
-// Usa a mesma ordem de categorias definida em lojaAtual.categorias
-// (a que o site público usa), em vez de ordem alfabética. Categorias
-// não declaradas ali vão pro final, em ordem alfabética.
 function ordenarProdutosPorCategoria(lista) {
     const ordemCategoria = {}
     ;(lojaAtual.categorias || []).forEach(c => { ordemCategoria[c.nome] = c.ordem })
@@ -1094,13 +1066,9 @@ function renderizarListaProdutos() {
     })
 }
 
-// Move um produto pra cima/baixo dentro da própria categoria (direcao: -1 ou 1).
-// Renumera o campo "ordem" de todos os produtos carregados como sequência
-// 0,1,2... na nova ordem — isso corrige de uma vez produtos antigos que
-// nunca tiveram "ordem" definida (ficavam com valor nulo).
 async function moverProduto(id, direcao) {
     const termo = (document.getElementById("busca-produtos")?.value || "").trim()
-    if (termo) return // não reordena durante uma busca
+    if (termo) return
 
     const indice = produtosAtuais.findIndex(p => p.id === id)
     if (indice === -1) return
@@ -1109,7 +1077,7 @@ async function moverProduto(id, direcao) {
     if (produtosAtuais[indiceVizinho].categoria !== produtosAtuais[indice].categoria) return
 
     ;[produtosAtuais[indice], produtosAtuais[indiceVizinho]] = [produtosAtuais[indiceVizinho], produtosAtuais[indice]]
-    renderizarListaProdutos() // reflete a troca na tela na hora
+    renderizarListaProdutos()
 
     for (let i = 0; i < produtosAtuais.length; i++) {
         const p = produtosAtuais[i]
@@ -1120,7 +1088,6 @@ async function moverProduto(id, direcao) {
     }
 }
 
-// ---- Modal: abrir/fechar ----
 const modalProduto = document.getElementById("modal-produto")
 
 document.getElementById("btn-novo-produto").addEventListener("click", () => abrirModalProduto())
@@ -1194,7 +1161,7 @@ document.getElementById("btn-salvar-produto").addEventListener("click", async ()
         esconder_setas: document.getElementById("prod-esconder-setas").checked,
         opcoes: temOpcoes ? opcoesProdutoAtual : null
     }
-    if (!id) registro.ordem = produtosAtuais.length // produto novo entra no fim da lista
+    if (!id) registro.ordem = produtosAtuais.length
 
     if (!registro.nome || !registro.categoria) {
         alert("Preencha ao menos o nome e a categoria.")
@@ -1215,6 +1182,11 @@ document.getElementById("btn-salvar-produto").addEventListener("click", async ()
 
 // ============================================================
 // ABA "MESAS" (comandas do modo mesa)
+// CORRIGIDO: nome da mesa nunca mais vai via innerHTML puro —
+// usa escapeHtml() para o texto e data-mesa (lido com getAttribute,
+// não interpretado como código) pro botão de finalizar. Isso fecha
+// a brecha de injeção mesmo que um registro malicioso já exista
+// no banco (inserido antes da correção, ou direto pela API).
 // ============================================================
 async function carregarMesas() {
     const { data, error } = await sb
@@ -1246,16 +1218,17 @@ async function carregarMesas() {
     Object.keys(porMesa).sort().forEach(mesa => {
         const pedidos = porMesa[mesa]
         const totalMesa = pedidos.reduce((s, p) => s + Number(p.total), 0)
+        const mesaSegura = escapeHtml(mesa)
 
         const card = document.createElement("div")
         card.className = "mesa-card"
         card.innerHTML = `
-            <h2><span>Mesa ${mesa}</span><span class="mesa-total">R$ ${totalMesa.toFixed(2).replace(".", ",")}</span></h2>
+            <h2><span>Mesa ${mesaSegura}</span><span class="mesa-total">R$ ${totalMesa.toFixed(2).replace(".", ",")}</span></h2>
             ${pedidos.map(p => `
                 <div class="pedido-bloco">
                     <div class="pedido-cabeca">
                         <span class="pedido-hora">${new Date(p.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
-                        <button class="btn-cancelar-pedido" onclick="cancelarPedido('${p.id}')" title="Cancelar este pedido"><i class="fa fa-xmark"></i> Cancelar</button>
+                        <button class="btn-cancelar-pedido" data-id="${p.id}" title="Cancelar este pedido"><i class="fa fa-xmark"></i> Cancelar</button>
                     </div>
                     ${p.itens.map(i => `
                         <div class="pedido-item">
@@ -1266,28 +1239,45 @@ async function carregarMesas() {
                 </div>
             `).join("")}
             <div class="mesa-acoes">
-                <button class="btn-mesa-finalizar" onclick="finalizarMesa('${mesa}')"><i class="fa fa-check"></i> Finalizar comanda</button>
+                <button class="btn-mesa-finalizar" data-mesa="${escapeHtml(mesa)}"><i class="fa fa-check"></i> Finalizar comanda</button>
             </div>
         `
         box.appendChild(card)
     })
 }
 
+// Delegação de evento: pega cliques nos botões "Finalizar comanda" e
+// "Cancelar" pedido dentro da lista de mesas. Usar data-attribute em
+// vez de onclick="funcao('${mesa}')" evita que o valor de `mesa`
+// (que vem originalmente de um parâmetro de URL) seja interpretado
+// como código JavaScript.
+document.getElementById("lista-mesas").addEventListener("click", (event) => {
+    const btnFinalizar = event.target.closest(".btn-mesa-finalizar")
+    if (btnFinalizar) {
+        if (btnFinalizar.disabled) return
+        const mesa = btnFinalizar.getAttribute("data-mesa")
+        btnFinalizar.disabled = true
+        finalizarMesa(mesa).finally(() => { btnFinalizar.disabled = false })
+        return
+    }
+
+    const btnCancelar = event.target.closest(".btn-cancelar-pedido")
+    if (btnCancelar) {
+        const id = btnCancelar.getAttribute("data-id")
+        cancelarPedido(id)
+    }
+})
+
 // ============================================================
 // FINALIZAR COMANDA DA MESA
-// CORRIGIDO: o WhatsApp agora é enviado logo depois de marcar a
-// comanda como finalizada — antes da baixa de estoque. Assim, uma
-// falha na baixa de estoque (ex: internet cair por um instante)
-// nunca mais impede o envio da confirmação e a comanda não se perde.
+// Trava de duplo clique feita no listener acima (desabilita o
+// botão específico enquanto a função roda).
 // ============================================================
 async function finalizarMesa(mesa) {
     if (!confirm(`Finalizar a comanda da mesa ${mesa}? Isso vai enviar o resumo pro WhatsApp da loja.`)) return
 
-    // Abre a aba do WhatsApp JÁ, ainda dentro do clique do usuário
-    // (evita o navegador bloquear o popup por causa dos awaits abaixo)
     const abaWhats = window.open("", "_blank")
 
-    // Busca de novo os pedidos abertos dessa mesa (garante dados frescos)
     const { data: pedidos, error: erroBusca } = await sb
         .from("pedidos_mesa")
         .select("*")
@@ -1302,7 +1292,6 @@ async function finalizarMesa(mesa) {
         return
     }
 
-    // Marca como finalizado no banco
     const { error: erroUpdate } = await sb.from("pedidos_mesa")
         .update({ status: "finalizado" })
         .eq("loja_id", lojaAtual.id)
@@ -1315,16 +1304,9 @@ async function finalizarMesa(mesa) {
         return
     }
 
-    // A comanda já está marcada como finalizada no banco — a partir daqui,
-    // NADA pode impedir o WhatsApp de ser enviado. Por isso ele vem primeiro,
-    // e a baixa de estoque (que já é protegida, mas é um passo a mais que
-    // pode falhar) vem depois, isolada no seu próprio try/catch.
     const { mensagem, total, itensSomados } = montarMensagemFechamento(mesa, pedidos)
     enviarWhatsappComMensagem(mensagem, abaWhats)
 
-    // Grava no histórico o texto EXATO que foi enviado — fica registrado
-    // pra sempre, mesmo que produtos/preços mudem depois. Não bloqueia o
-    // fluxo se falhar (o pedido já foi enviado, isso é só o registro).
     try {
         const { error: erroHistorico } = await sb.from("comandas_finalizadas").insert({
             loja_id: lojaAtual.id,
@@ -1340,9 +1322,6 @@ async function finalizarMesa(mesa) {
         alert("A comanda foi finalizada e o WhatsApp foi enviado, mas houve um erro ao salvar no histórico. Anote o pedido manualmente por precaução.")
     }
 
-    // Alimenta o relatório do dia (Dashboard). Tabela leve, se autolimpa
-    // sozinha — não precisa de proteção forte, uma falha aqui não afeta
-    // WhatsApp nem o histórico, que já rodaram/gravaram acima.
     try {
         await sb.from("relatorio_dia").insert({
             loja_id: lojaAtual.id,
@@ -1356,7 +1335,6 @@ async function finalizarMesa(mesa) {
     }
 
     try {
-        // Soma as quantidades por produto (id) pra baixar o estoque de cada um
         const quantidadesPorProduto = {}
         pedidos.forEach(p => {
             p.itens.forEach(i => {
@@ -1364,7 +1342,7 @@ async function finalizarMesa(mesa) {
             })
         })
         await baixarEstoque(quantidadesPorProduto, sb)
-        await carregarProdutos() // reflete o novo estoque/esgotado na lista
+        await carregarProdutos()
     } catch (err) {
         console.error("Erro ao baixar estoque da mesa", mesa, err)
         alert("A comanda foi finalizada e o WhatsApp foi enviado normalmente, mas houve um erro ao atualizar o estoque. Confira o estoque manualmente na aba Produtos.")
@@ -1373,16 +1351,6 @@ async function finalizarMesa(mesa) {
     await carregarMesas()
 }
 
-// ============================================================
-// BAIXA DE ESTOQUE
-// CORRIGIDO: cada item agora roda dentro de um try/catch. Antes,
-// uma falha de rede num único item (ex: internet cair por um
-// instante) lançava uma exceção que travava toda a função
-// finalizarMesa() no meio do caminho, antes do envio do WhatsApp.
-// Recebe { produtoId: quantidadeComprada } e desconta de cada
-// produto. Produtos com estoque = null não são controlados, então
-// são ignorados. Ao chegar a 0, marca esgotado automaticamente.
-// ============================================================
 async function baixarEstoque(quantidadesPorProduto, cliente) {
     for (const [id, qtdComprada] of Object.entries(quantidadesPorProduto)) {
         try {
@@ -1400,15 +1368,11 @@ async function baixarEstoque(quantidadesPorProduto, cliente) {
 
             await cliente.from("produtos").update(atualizacao).eq("id", id)
         } catch (err) {
-            // Nunca deixa uma falha aqui travar o restante do processo —
-            // só registra e segue pro próximo item.
             console.error("Erro ao baixar estoque do produto", id, err)
         }
     }
 }
 
-// Monta o texto de fechamento de uma mesa a partir dos pedidos dela.
-// Não manda nada — só retorna o texto pronto, o total e os itens somados.
 function montarMensagemFechamento(mesa, pedidos) {
     const itensSomados = {}
     pedidos.forEach(p => {
@@ -1457,7 +1421,6 @@ function agruparOpcoesPorGrupo(opcoes) {
     return ordemGrupos.map(g => `${g}: ${porGrupo[g].join(", ")}`)
 }
 
-// Abre (ou reaproveita uma aba já aberta) o WhatsApp com um texto pronto.
 function enviarWhatsappComMensagem(mensagem, abaWhats) {
     const whatsapp = (lojaAtual.whatsapp || "").trim()
     if (!whatsapp) {
@@ -1481,7 +1444,7 @@ async function cancelarPedido(id) {
     const { error } = await sb.from("pedidos_mesa")
         .delete()
         .eq("id", id)
-        .eq("loja_id", lojaAtual.id) // trava extra: só apaga pedido da própria loja
+        .eq("loja_id", lojaAtual.id)
 
     if (error) {
         alert("Não foi possível cancelar: " + error.message)
@@ -1512,9 +1475,6 @@ function inscreverAtualizacoesMesas() {
 
 let canalHistoricoDeliveryInscrito = false
 
-// Escuta novos pedidos de delivery/retirada assim que são gravados em
-// comandas_finalizadas (pelo site público, em script.js). Se a aba já
-// estiver aberta, recarrega a lista na hora; senão, só acende a bolinha.
 function inscreverAtualizacoesHistoricoDelivery() {
     if (canalHistoricoDeliveryInscrito) return
     canalHistoricoDeliveryInscrito = true
@@ -1537,8 +1497,6 @@ function inscreverAtualizacoesHistoricoDelivery() {
 
 // ============================================================
 // ABA "DASHBOARD"
-// Lê só de relatorio_dia — essa tabela nunca guarda mais que o
-// dia de hoje por loja, então não precisa nem filtrar por data.
 // ============================================================
 async function carregarDashboard() {
     const msg = document.getElementById("msg-dashboard")
@@ -1609,7 +1567,10 @@ document.getElementById("btn-baixar-relatorio").addEventListener("click", () => 
 
 // ============================================================
 // ABA "HISTÓRICO MESA" (comandas de mesa finalizadas)
-// Mostra as 30 mais recentes com origem = 'mesa'.
+// CORRIGIDO: nome da mesa e o texto da mensagem não vão mais
+// direto no innerHTML — a mensagem é definida via textContent
+// (preserva quebras de linha graças ao white-space:pre-wrap do
+// CSS, sem interpretar nada como HTML) e "Mesa X" usa escapeHtml.
 // ============================================================
 let historicoMesaAtual = []
 
@@ -1650,23 +1611,23 @@ function renderizarHistoricoMesa() {
         card.className = "historico-card"
         card.innerHTML = `
             <div class="historico-topo">
-                <span class="mesa-nome">Mesa ${c.mesa}</span>
+                <span class="mesa-nome">Mesa ${escapeHtml(c.mesa)}</span>
                 <span class="data-hora">${dataHora}</span>
                 <span class="total">${totalFormatado}</span>
             </div>
-            <div class="historico-texto">${c.mensagem}</div>
+            <div class="historico-texto"></div>
             <div class="historico-acoes">
                 <button class="btn-historico btn-reenviar" onclick="reenviarHistorico('${c.id}', 'mesa')"><i class="fab fa-whatsapp"></i> Enviar pro WhatsApp</button>
                 <button class="btn-historico btn-copiar" id="btn-copiar-${c.id}" onclick="copiarHistorico('${c.id}', 'mesa')"><i class="fa fa-copy"></i> Copiar comanda</button>
             </div>
         `
+        card.querySelector(".historico-texto").textContent = c.mensagem
         box.appendChild(card)
     })
 }
 
 // ============================================================
 // ABA "HISTÓRICO DELIVERY" (pedidos de delivery/retirada)
-// Mesma lógica e mesmo limite de 30, filtrando origem = 'delivery'.
 // ============================================================
 let historicoDeliveryAtual = []
 
@@ -1711,12 +1672,13 @@ function renderizarHistoricoDelivery() {
                 <span class="data-hora">${dataHora}</span>
                 <span class="total">${totalFormatado}</span>
             </div>
-            <div class="historico-texto">${c.mensagem}</div>
+            <div class="historico-texto"></div>
             <div class="historico-acoes">
                 <button class="btn-historico btn-reenviar" onclick="reenviarHistorico('${c.id}', 'delivery')"><i class="fab fa-whatsapp"></i> Enviar pro WhatsApp</button>
                 <button class="btn-historico btn-copiar" id="btn-copiar-${c.id}" onclick="copiarHistorico('${c.id}', 'delivery')"><i class="fa fa-copy"></i> Copiar comanda</button>
             </div>
         `
+        card.querySelector(".historico-texto").textContent = c.mensagem
         box.appendChild(card)
     })
 }
@@ -1739,7 +1701,6 @@ async function copiarHistorico(id, tipo) {
     try {
         await navigator.clipboard.writeText(comanda.mensagem)
     } catch (err) {
-        // Navegadores mais antigos / contexto sem permissão: usa o método antigo como reserva
         const textarea = document.createElement("textarea")
         textarea.value = comanda.mensagem
         textarea.style.position = "fixed"
@@ -1790,7 +1751,6 @@ async function copiarHistorico(id, tipo) {
         abas.classList.remove("arrastando")
     }
 
-    // --- Touch (celular) ---
     abas.addEventListener("touchstart", (e) => {
         inicio(e.touches[0].clientX)
     }, { passive: true })
@@ -1802,7 +1762,6 @@ async function copiarHistorico(id, tipo) {
     abas.addEventListener("touchend", parar)
     abas.addEventListener("touchcancel", parar)
 
-    // --- Mouse (computador) ---
     abas.addEventListener("mousedown", (e) => {
         inicio(e.clientX)
     })
@@ -1812,7 +1771,6 @@ async function copiarHistorico(id, tipo) {
     document.addEventListener("mouseup", parar)
     abas.addEventListener("mouseleave", parar)
 
-    // impede que o clique troque de aba logo depois de um arraste
     abas.addEventListener("click", (e) => {
         if (moveu) { e.stopPropagation(); e.preventDefault() }
     }, true)
@@ -1824,11 +1782,8 @@ async function copiarHistorico(id, tipo) {
 ;(function(){
     const ordemAbas = ["mesas", "historico-mesa", "historico-delivery", "produtos", "loja", "dashboard"]
     let inicioX = 0, inicioY = 0, rastreando = false
-    let paginaFicouEscondida = false // detecta se o app foi pro 2º plano (ex: seletor de arquivo abriu)
+    let paginaFicouEscondida = false
 
-    // Se a página ficar escondida durante um toque em andamento (o que
-    // acontece quando o seletor de foto do celular abre por cima), marca
-    // pra invalidar esse gesto quando o touchend chegar.
     document.addEventListener("visibilitychange", () => {
         if (document.hidden && rastreando) {
             paginaFicouEscondida = true
@@ -1838,20 +1793,17 @@ async function copiarHistorico(id, tipo) {
     document.addEventListener("touchstart", (e) => {
         if (e.touches.length !== 1) return
         if (document.getElementById("modal-produto").classList.contains("aberto")) return
-        // ignora toques que começam no cabeçalho ou na barra de abas
         if (e.target.closest("header.topo") || e.target.closest(".abas")) return
         inicioX = e.touches[0].clientX
         inicioY = e.touches[0].clientY
         rastreando = true
-        paginaFicouEscondida = false // reseta a cada novo toque
+        paginaFicouEscondida = false
     }, { passive: true })
 
     document.addEventListener("touchend", (e) => {
         if (!rastreando) return
         rastreando = false
 
-        // Se a página ficou escondida no meio do caminho (seletor de
-        // arquivo, câmera, etc.), ignora esse toque — não é um swipe real.
         if (paginaFicouEscondida) {
             paginaFicouEscondida = false
             return
