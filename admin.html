@@ -617,7 +617,32 @@ async function subirImagem(file, prefixo) {
     return data.publicUrl
 }
 
-function conectarUpload(inputId, statusId, previewId, hiddenId, prefixo) {
+// ============================================================
+// APAGAR IMAGEM ANTIGA DO STORAGE (best effort)
+// Extrai o caminho "lojaId/arquivo.ext" a partir da URL pública salva
+// no banco e pede pro Storage remover o arquivo. Uma falha aqui nunca
+// deve travar o fluxo principal — o registro no banco é o que importa
+// de verdade; o arquivo órfão no bucket é só desperdício de espaço.
+// ============================================================
+async function apagarImagemAntiga(url) {
+    if (!url) return
+    try {
+        const partes = url.split("/midia/")
+        if (partes.length < 2) return
+        const caminho = decodeURIComponent(partes[1])
+        await sb.storage.from("midia").remove([caminho])
+    } catch (err) {
+        console.error("Erro ao apagar imagem antiga do storage", url, err)
+    }
+}
+
+// Guarda a URL antiga de logo/banner aqui, mas NÃO apaga ainda — a
+// exclusão só acontece quando o usuário confirmar clicando em "Salvar
+// alterações". Se ele sair sem salvar, o arquivo antigo continua no
+// Storage e nenhum link no banco fica quebrado.
+const imagensAntigasPendentes = {}
+
+function conectarUpload(inputId, statusId, previewId, hiddenId, prefixo, chavePendente) {
     document.getElementById(inputId).addEventListener("change", async (e) => {
         const file = e.target.files[0]
         if (!file) return
@@ -627,11 +652,13 @@ function conectarUpload(inputId, statusId, previewId, hiddenId, prefixo) {
         status.textContent = "Enviando..."
 
         try {
+            const urlAntiga = document.getElementById(hiddenId).value
             const url = await subirImagem(file, prefixo)
             document.getElementById(hiddenId).value = url
             document.getElementById(previewId).src = url
             status.textContent = "Enviado ✓"
             status.className = "upload-status ok"
+            imagensAntigasPendentes[chavePendente] = urlAntiga
         } catch (err) {
             status.textContent = "Erro: " + err.message
             status.className = "upload-status erro"
@@ -639,13 +666,15 @@ function conectarUpload(inputId, statusId, previewId, hiddenId, prefixo) {
     })
 }
 
-conectarUpload("loja-logo-arquivo", "loja-logo-status", "loja-logo-preview", "loja-logo", "logo")
-conectarUpload("loja-banner-arquivo", "loja-banner-status", "loja-banner-preview", "loja-banner", "banner")
+conectarUpload("loja-logo-arquivo", "loja-logo-status", "loja-logo-preview", "loja-logo", "logo", "logo")
+conectarUpload("loja-banner-arquivo", "loja-banner-status", "loja-banner-preview", "loja-banner", "banner", "banner")
 
 // ============================================================
 // UPLOAD DE MÚLTIPLAS FOTOS DO PRODUTO
 // ============================================================
 let fotosProdutoAtual = []
+let fotosNovasNestaSessao = []   // uploads feitos nesta sessão do modal, ainda não salvos
+let fotosParaApagarAoSalvar = [] // fotos já salvas que o usuário removeu, só apaga se salvar de fato
 
 document.getElementById("prod-fotos-arquivo").addEventListener("change", async (e) => {
     const files = Array.from(e.target.files)
@@ -657,6 +686,7 @@ document.getElementById("prod-fotos-arquivo").addEventListener("change", async (
         try {
             const url = await subirImagem(file, "produto")
             fotosProdutoAtual.push(url)
+            fotosNovasNestaSessao.push(url)
             renderGaleriaFotos()
         } catch (err) {
             status.textContent = "Erro: " + err.message
@@ -684,8 +714,21 @@ function renderGaleriaFotos() {
 }
 
 function removerFotoProduto(i) {
-    fotosProdutoAtual.splice(i, 1)
+    const [urlRemovida] = fotosProdutoAtual.splice(i, 1)
     renderGaleriaFotos()
+
+    const eraNovaNestaSessao = fotosNovasNestaSessao.includes(urlRemovida)
+    if (eraNovaNestaSessao) {
+        // Upload feito agora, nunca chegou a ser salvo no produto — pode
+        // apagar do Storage direto, não tem link nenhum apontando pra ele.
+        fotosNovasNestaSessao = fotosNovasNestaSessao.filter(u => u !== urlRemovida)
+        apagarImagemAntiga(urlRemovida)
+    } else {
+        // Foto que já estava salva no produto — só apaga do Storage
+        // quando o produto for salvo de fato (evita link quebrado se o
+        // usuário clicar em Cancelar depois de remover).
+        fotosParaApagarAoSalvar.push(urlRemovida)
+    }
 }
 
 // ============================================================
@@ -981,6 +1024,14 @@ document.getElementById("btn-salvar-loja").addEventListener("click", async () =>
 
     lojaAtual = { ...lojaAtual, ...atualizacao }
     document.getElementById("painel-nome-loja").textContent = lojaAtual.nome
+
+    // Só agora, com a troca confirmada e já salva no banco, apaga do
+    // Storage as imagens antigas de logo/banner (se houve troca).
+    apagarImagemAntiga(imagensAntigasPendentes.logo)
+    apagarImagemAntiga(imagensAntigasPendentes.banner)
+    imagensAntigasPendentes.logo = null
+    imagensAntigasPendentes.banner = null
+
     const selo = document.getElementById("salvando-loja")
     selo.style.display = "inline"
     setTimeout(() => selo.style.display = "none", 2000)
@@ -1173,7 +1224,19 @@ const modalProduto = document.getElementById("modal-produto")
 
 document.getElementById("btn-novo-produto").addEventListener("click", () => abrirModalProduto())
 document.getElementById("busca-produtos").addEventListener("input", renderizarListaProdutos)
-document.getElementById("btn-cancelar-produto").addEventListener("click", fecharModalProduto)
+document.getElementById("btn-cancelar-produto").addEventListener("click", cancelarEdicaoProduto)
+
+// Cancelar não pode deixar sobra: qualquer foto enviada durante esta
+// sessão do modal (já subiu pro Storage, mas o produto nunca foi salvo)
+// é apagada aqui. Fotos que já estavam salvas e só foram marcadas pra
+// remoção continuam intactas — elas seguem valendo até o produto ser
+// salvo de verdade.
+function cancelarEdicaoProduto() {
+    fotosNovasNestaSessao.forEach(url => apagarImagemAntiga(url))
+    fotosNovasNestaSessao = []
+    fotosParaApagarAoSalvar = []
+    fecharModalProduto()
+}
 
 function abrirModalProduto(produto) {
     document.getElementById("modal-titulo").textContent = produto ? "Editar produto" : "Novo produto"
@@ -1184,6 +1247,8 @@ function abrirModalProduto(produto) {
     document.getElementById("prod-preco").value = produto ? produto.preco : ""
     document.getElementById("prod-estoque").value = (produto && produto.estoque !== null && produto.estoque !== undefined) ? produto.estoque : ""
     fotosProdutoAtual = produto && produto.fotos ? [...produto.fotos] : []
+    fotosNovasNestaSessao = []
+    fotosParaApagarAoSalvar = []
     renderGaleriaFotos()
     document.getElementById("prod-fotos-status").textContent = ""
     document.getElementById("prod-oferta").checked = produto ? !!produto.oferta : false
@@ -1256,6 +1321,12 @@ document.getElementById("btn-salvar-produto").addEventListener("click", async ()
     const { error } = await query
 
     if (error) { alert("Não foi possível salvar: " + error.message); return }
+
+    // Produto salvo com sucesso — agora sim pode apagar do Storage as
+    // fotos que o usuário removeu durante esta edição.
+    fotosParaApagarAoSalvar.forEach(url => apagarImagemAntiga(url))
+    fotosParaApagarAoSalvar = []
+    fotosNovasNestaSessao = []
 
     fecharModalProduto()
     await carregarProdutos()
