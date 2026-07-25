@@ -30,6 +30,18 @@ function scrollSuavePara(destinoY, duracao = 500) {
 }
 
 // ===========================
+// SEGURANÇA — escapar texto antes de inserir via innerHTML
+// Evita que nome/descrição de produto quebrem pra fora do template e
+// injetem HTML/JS na página, caso a conta do lojista seja comprometida
+// ou algum dado venha corrompido.
+// ===========================
+function escaparHtml(valor) {
+    const div = document.createElement("div")
+    div.textContent = valor === null || valor === undefined ? "" : String(valor)
+    return div.innerHTML
+}
+
+// ===========================
 // APLICAR DADOS DA LOJA NA PÁGINA
 // (lê o objeto `loja` de dados-loja.js)
 // ===========================
@@ -193,17 +205,17 @@ function criarCardProduto(produto) {
     const card = document.createElement("div")
     card.className = "flex gap-6" + (esgotado ? " produto-esgotado" : "")
     card.innerHTML = `
-        <img src="${produto.fotos[0]}" alt="${produto.nome}"
+        <img src="${produto.fotos[0]}" alt="${escaparHtml(produto.nome)}"
             class="w-28 h-28 rounded-md object-cover hover:scale-110 hover:rotate-2 duration-200 product-clickable"
             onerror="imagemFallbackProduto(this, '112x112')"
         />
         <div class="product-info">
             <p class="font-bold product-name-clickable">
-                ${produto.nome}
+                ${escaparHtml(produto.nome)}
                 ${badgeOferta}
                 ${badgeEsgotado}
             </p>
-            <p class="text-sm text-gray-600">${produto.desc}</p>
+            <p class="text-sm text-gray-600">${escaparHtml(produto.desc)}</p>
             <div class="product-footer">
                 ${esconderPreco ? "<span></span>" : `<p class="font-bold text-lg text-laranja">R$ ${precoFormatado}</p>`}
                 <div class="product-footer-actions">
@@ -213,7 +225,7 @@ function criarCardProduto(produto) {
                         <span class="qty-value">1</span>
                         <button class="qty-btn qty-increase" type="button">+</button>
                     </div>`}
-                    <button class="add-to-cart-btn${esgotado ? " esgotado-btn" : ""}" data-id="${produto.id}" data-name="${produto.nome}" data-price="${produto.preco}" data-esgotado="${esgotado}">
+                    <button class="add-to-cart-btn${esgotado ? " esgotado-btn" : ""}" data-id="${produto.id}" data-name="${escaparHtml(produto.nome)}" data-price="${produto.preco}" data-esgotado="${esgotado}">
                         <i class="fa ${esgotado ? "fa-ban" : "fa-cart-plus"} text-lg"></i>
                     </button>
                 </div>
@@ -664,6 +676,50 @@ addressBairro.addEventListener("input", limparAvisoEndereco)
 
 
 // ===========================
+// AJUSTE DE ESTOQUE SEM CONDIÇÃO DE CORRIDA
+// O update só é aceito se o estoque no banco ainda for o mesmo valor
+// lido; se outro pedido escreveu no meio do caminho, tenta de novo com
+// o valor mais recente, até um limite de tentativas. Evita perder um
+// desconto de estoque quando dois pedidos do mesmo produto acontecem
+// quase ao mesmo tempo.
+// ===========================
+async function ajustarEstoqueComRetentativa(cliente, produtoId, delta, maxTentativas = 5) {
+    for (let tentativa = 0; tentativa < maxTentativas; tentativa++) {
+        const { data: prod, error: erroBusca } = await cliente
+            .from("produtos")
+            .select("estoque")
+            .eq("id", produtoId)
+            .single()
+
+        if (erroBusca || !prod || prod.estoque === null || prod.estoque === undefined) {
+            return { sucesso: false }
+        }
+
+        const estoqueLido = prod.estoque
+        const novoEstoque = Math.max(0, estoqueLido + delta)
+        const atualizacao = { estoque: novoEstoque }
+        if (novoEstoque === 0) atualizacao.esgotado = true
+        if (delta > 0 && novoEstoque > 0) atualizacao.esgotado = false
+
+        const { data: linhasAfetadas, error: erroUpdate } = await cliente
+            .from("produtos")
+            .update(atualizacao)
+            .eq("id", produtoId)
+            .eq("estoque", estoqueLido)
+            .select("id")
+
+        if (!erroUpdate && linhasAfetadas && linhasAfetadas.length > 0) {
+            return { sucesso: true, novoEstoque }
+        }
+
+        await new Promise(r => setTimeout(r, 80 + Math.random() * 120))
+    }
+
+    console.error("Não foi possível ajustar o estoque do produto após várias tentativas (concorrência alta)", produtoId)
+    return { sucesso: false }
+}
+
+// ===========================
 // BAIXA DE ESTOQUE
 // Roda no momento em que um pedido é finalizado (mesa, delivery
 // ou retirada). Recebe o carrinho e desconta a quantidade comprada
@@ -671,34 +727,18 @@ addressBairro.addEventListener("input", limparAvisoEndereco)
 // controlados, então são ignorados. Ao chegar a 0, marca esgotado
 // automaticamente (assim o produto já aparece indisponível pro
 // próximo cliente, sem precisar o lojista mexer no admin).
-//
-// CORRIGIDO: também atualiza o array local `produtos`, não só o
-// banco. Sem isso, se o cliente pedisse o mesmo item de novo na
-// mesma visita (sem recarregar a página), a validação de estoque
-// em tempo real ainda enxergava o número antigo.
 // ===========================
 async function baixarEstoque(itensCarrinho) {
     for (const item of itensCarrinho) {
         try {
-            const { data: prod, error: erroBusca } = await supabaseClient
-                .from("produtos")
-                .select("estoque")
-                .eq("id", item.id)
-                .single()
-
-            if (erroBusca || !prod || prod.estoque === null || prod.estoque === undefined) continue
-
-            const novoEstoque = Math.max(0, prod.estoque - item.quantity)
-            const atualizacao = { estoque: novoEstoque }
-            if (novoEstoque === 0) atualizacao.esgotado = true
-
-            await supabaseClient.from("produtos").update(atualizacao).eq("id", item.id)
+            const resultado = await ajustarEstoqueComRetentativa(supabaseClient, item.id, -item.quantity)
+            if (!resultado.sucesso) continue
 
             // Mantém o array local em sincronia pro resto da sessão
             const produtoLocal = produtos.find(p => String(p.id) === String(item.id))
             if (produtoLocal) {
-                produtoLocal.estoque = novoEstoque
-                if (novoEstoque === 0) produtoLocal.esgotado = true
+                produtoLocal.estoque = resultado.novoEstoque
+                if (resultado.novoEstoque === 0) produtoLocal.esgotado = true
             }
         } catch (err) {
             console.error("Erro ao baixar estoque do produto", item.id, err)
