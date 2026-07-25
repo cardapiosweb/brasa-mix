@@ -57,6 +57,18 @@ function aplicarDadosDaLoja() {
     }
 }
 
+// ===========================
+// COR PARA OS TOASTS (Toastify)
+// Usa a cor personalizada da loja quando existe; senão cai pra cor
+// que o tema já aplicou na variável CSS --laranja (nunca fica sem
+// cor / com o cinza padrão do navegador).
+// ===========================
+function corDoToast() {
+    if (loja.corPrincipal) return loja.corPrincipal
+    const corTema = getComputedStyle(document.documentElement).getPropertyValue("--laranja").trim()
+    return corTema || "#A9321E"
+}
+
 
 // ===========================
 // RENDERIZAR PRODUTOS
@@ -267,16 +279,26 @@ document.getElementById("modal-qty-decrease").addEventListener("click", () => {
 // Quando presente, o site sabe que o pedido é de uma mesa
 // específica: esconde entrega/retirada, endereço e pagamento.
 //
-// SEGURANÇA: o valor vem direto da URL, digitável por qualquer
-// pessoa. Sem sanitizar, alguém poderia colocar HTML/script no
-// parâmetro (ex: ?mesa=<img src=x onerror=...>), que ficaria
-// gravado no banco e executaria no navegador do LOJISTA quando
-// ele abrisse o painel admin. Por isso: só letras/números, até
-// 10 caracteres.
+// SEGURANÇA (validação, não sanitização): o valor de "mesa" vem
+// direto da URL pública — qualquer pessoa pode montar um link com
+// qualquer texto nesse parâmetro (inclusive HTML/JS) e mandar pra
+// alguém, inclusive pro próprio lojista. Esse valor acaba gravado
+// no banco (pedidos_mesa) e mais tarde é exibido no painel admin.
+// Por isso ele é validado aqui, na origem, antes de ser usado em
+// qualquer lugar: só letras, números, espaço, hífen e underline são
+// aceitos, com um tamanho máximo curto (compatível com "01",
+// "Mesa 12", "Varanda 3" etc.). Qualquer coisa fora disso é tratada
+// como link inválido (mesaAtual vira null).
 // ===========================
+function sanitizarNumeroMesa(valorBruto) {
+    if (!valorBruto) return null
+    const limpo = String(valorBruto).trim().slice(0, 20)
+    const valido = /^[\p{L}0-9 _-]+$/u.test(limpo)
+    return valido ? limpo : null
+}
+
 const paramsUrl = new URLSearchParams(window.location.search)
-const mesaBruta = paramsUrl.get("mesa")
-const mesaAtual = mesaBruta ? mesaBruta.replace(/[^a-zA-Z0-9]/g, "").slice(0, 10) : null
+const mesaAtual = sanitizarNumeroMesa(paramsUrl.get("mesa"))
 const modoMesa = !!mesaAtual
 
 function aplicarModoMesa() {
@@ -425,7 +447,7 @@ document.getElementById("menu").addEventListener("click", function (event) {
     const decreaseBtn = event.target.closest(".qty-decrease")
     if (increaseBtn || decreaseBtn) {
         const seletor = event.target.closest(".qty-selector")
-        const btnCarrinho = seletor.parentElement.querySelector(".add-to-cart-btn")
+        const btnCarrinho = seletor.closest(".product-footer")?.querySelector(".add-to-cart-btn")
         const produtoId = btnCarrinho ? btnCarrinho.getAttribute("data-id") : null
 
         let qtd = parseInt(seletor.getAttribute("data-qty"), 10)
@@ -739,9 +761,8 @@ checkoutBtn.addEventListener("click", async function () {
             total
         })
 
-        checkoutBtn.disabled = false
-
         if (error) {
+            checkoutBtn.disabled = false
             Toastify({
                 text: "Erro ao enviar pedido, tente de novo.",
                 duration: 2500,
@@ -751,6 +772,14 @@ checkoutBtn.addEventListener("click", async function () {
             }).showToast()
             return
         }
+
+        // Desconta do estoque JÁ, no momento do pedido — não espera a
+        // mesa fechar a comanda inteira, senão outras mesas pedindo o
+        // mesmo produto não veriam o estoque real enquanto essa mesa
+        // continua aberta.
+        await baixarEstoque(cart)
+
+        checkoutBtn.disabled = false
 
         Toastify({
             text: "✅ Pedido enviado pra cozinha!",

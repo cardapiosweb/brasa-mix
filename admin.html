@@ -299,6 +299,47 @@
     .dash-label{font-size:12.5px;color:#8a7361;font-weight:700;text-transform:uppercase;letter-spacing:.03em;}
     .dash-valor{font-size:26px;font-weight:800;color:var(--tinta);}
     .dash-valor-texto{font-size:16px;}
+
+    /* ===== Modo Garçom (grid de mesas) ===== */
+    .garcom-grid{
+        display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px;
+    }
+    @media (max-width: 480px) {
+        .garcom-grid {
+            grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+            gap: 8px;
+        }
+        .garcom-mesa {
+            padding: 6px;
+        }
+        .garcom-mesa .garcom-mesa-numero {
+            font-size: 13px;
+        }
+        .garcom-mesa .garcom-mesa-total {
+            font-size: 10.5px;
+        }
+        .garcom-mesa .garcom-mesa-tempo {
+            font-size: 9.5px;
+        }
+    }
+    .garcom-mesa{
+        position:relative;aspect-ratio:1;border-radius:12px;border:1.5px solid var(--linha);
+        background:white;display:flex;flex-direction:column;align-items:center;justify-content:center;
+        gap:4px;cursor:pointer;padding:8px;text-align:center;transition:transform .15s,border-color .15s;
+    }
+    .garcom-mesa:hover{transform:scale(1.04);border-color:var(--tinta);}
+    .garcom-mesa .garcom-mesa-numero{font-weight:800;font-size:15px;}
+    .garcom-mesa .garcom-mesa-total{font-size:11.5px;color:#8a7361;}
+    .garcom-mesa .garcom-mesa-tempo{font-size:10.5px;color:#8a7361;opacity:.8;}
+    .garcom-mesa.aberta{background:var(--tinta-clara);border-color:var(--tinta);}
+    .garcom-mesa.aberta .garcom-mesa-total{color:var(--tinta-escura);font-weight:700;}
+    .garcom-mesa .garcom-mesa-bolinha{
+        position:absolute;top:6px;right:6px;width:10px;height:10px;border-radius:50%;
+        background:var(--tinta);display:none;
+    }
+    .garcom-mesa .garcom-mesa-bolinha.visivel{display:block;}
+    .garcom-sem-config{color:#8a7361;font-size:14px;}
+    .garcom-sem-config a{color:var(--tinta);font-weight:700;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -330,6 +371,7 @@
     </header>
 
     <div class="abas">
+        <button class="aba-btn" data-aba="garcom" style="display:none;">Modo Garçom <span class="bolinha" id="bolinha-garcom"></span></button>
         <button class="aba-btn" data-aba="mesas" style="display:none;">Mesas <span class="bolinha" id="bolinha-mesas"></span></button>
         <button class="aba-btn" data-aba="historico-mesa" style="display:none;">Histórico Mesa</button>
         <button class="aba-btn ativa" data-aba="historico-delivery">Histórico Delivery <span class="bolinha" id="bolinha-historico-delivery"></span></button>
@@ -339,6 +381,11 @@
     </div>
 
     <main>
+        <section class="painel-secao" id="secao-garcom">
+            <div id="msg-garcom"></div>
+            <div id="grid-garcom" class="garcom-grid"></div>
+        </section>
+
         <section class="painel-secao" id="secao-mesas">
             <div id="msg-mesas"></div>
             <div id="lista-mesas"></div>
@@ -414,6 +461,9 @@
                     <div class="campo"><label>Loja ativa (aparece no site)</label>
                         <select id="loja-ativa"><option value="true">Sim</option><option value="false">Não</option></select>
                     </div>
+                </div>
+                <div class="grid2">
+                    <div class="campo"><label>Número de mesas</label><input type="number" step="1" min="0" id="loja-numero-mesas" placeholder="Ex: 20" /></div>
                 </div>
                 <button class="btn-primario" id="btn-salvar-loja" style="width:auto;padding:10px 22px;">Salvar alterações</button>
                 <span id="salvando-loja">Salvo ✓</span>
@@ -496,6 +546,28 @@
     </div>
 </div>
 
+<!-- ==================== MODAL: AÇÕES DA MESA (Modo Garçom) ==================== -->
+<div id="modal-garcom" style="display:none;position:fixed;inset:0;background:rgba(36,27,22,.6);z-index:205;align-items:center;justify-content:center;padding:16px;">
+    <div class="modal-box" style="max-width:420px;">
+        <h2 id="garcom-modal-titulo">Mesa</h2>
+        <div id="garcom-modal-comanda" style="margin-bottom:16px;"></div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+            <button type="button" class="btn-novo" id="btn-garcom-incluir" style="width:100%;justify-content:center;display:flex;"><i class="fa fa-plus"></i>&nbsp;Incluir pedido</button>
+            <button type="button" class="btn-mesa-finalizar" id="btn-garcom-fechar" style="display:none;width:100%;justify-content:center;"><i class="fa fa-check"></i>&nbsp;Fechar comanda</button>
+            <button type="button" class="btn-secundario" id="btn-garcom-cancelar" style="width:100%;">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== MODAL: CARDÁPIO EM TELA CHEIA (iframe) ==================== -->
+<div id="modal-garcom-iframe" style="display:none;position:fixed;inset:0;background:var(--creme);z-index:210;flex-direction:column;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--carvao);">
+        <span style="color:white;font-weight:700;font-size:14px;" id="garcom-iframe-titulo">Mesa</span>
+        <button type="button" onclick="fecharModalGarcomIframe()" style="background:none;border:1.5px solid #5a483c;color:#F3E9DA;border-radius:8px;padding:6px 12px;font-size:13px;">Voltar ao grid</button>
+    </div>
+    <iframe id="garcom-iframe" style="flex:1;border:none;width:100%;"></iframe>
+</div>
+
 <script>
 // ============================================================
 // CONFIG — igual ao supabase-loader.js do site público
@@ -510,18 +582,16 @@ let categoriasAtuais = []
 let canalMesasInscrito = false
 
 // ============================================================
-// SEGURANÇA: escapa texto antes de inserir via innerHTML.
-// O campo "mesa" vem originalmente de ?mesa= na URL do site
-// público (digitável por qualquer pessoa). Mesmo já sendo
-// filtrado na origem (script.js só aceita letras/números), essa
-// função é uma segunda camada de proteção aqui no admin — cobre
-// qualquer registro que já exista no banco de antes da correção,
-// ou uma inserção feita direto pela API sem passar pelo site.
+// SEGURANÇA — escapar texto antes de inserir via innerHTML
+// Evita XSS armazenado: qualquer valor que venha de fora (nome de
+// mesa vindo da URL pública, texto de mensagem gravado no banco
+// etc.) passa por aqui antes de entrar em qualquer template
+// interpolado com innerHTML.
 // ============================================================
-function escapeHtml(texto) {
-    return String(texto).replace(/[&<>"']/g, c => ({
-        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-    }[c]))
+function escaparHtml(valor) {
+    const div = document.createElement("div")
+    div.textContent = valor === null || valor === undefined ? "" : String(valor)
+    return div.innerHTML
 }
 
 // ============================================================
@@ -816,7 +886,10 @@ async function iniciarPainel(user) {
     preencherFormularioLoja()
     await carregarDashboard()
     await carregarProdutos()
+    await carregarModoGarcom()
+    await carregarMesas()
     await carregarHistoricoDelivery()
+    inscreverAtualizacoesMesas()
     inscreverAtualizacoesHistoricoDelivery()
 }
 
@@ -831,6 +904,10 @@ document.querySelectorAll(".aba-btn").forEach(btn => {
         document.getElementById("secao-" + btn.dataset.aba).classList.add("ativa")
         if (btn.dataset.aba === "dashboard") {
             carregarDashboard()
+        }
+        if (btn.dataset.aba === "garcom") {
+            carregarModoGarcom()
+            document.getElementById("bolinha-garcom").classList.remove("visivel")
         }
         if (btn.dataset.aba === "mesas") {
             carregarMesas()
@@ -867,6 +944,7 @@ function preencherFormularioLoja() {
     document.getElementById("loja-cor").value = lojaAtual.cor_principal || (window.TEMA_ATUAL && window.TEMA_ATUAL.cores.principal) || "#A9321E"
     document.getElementById("loja-cor").disabled = !usaCorPersonalizada
     document.getElementById("loja-ativa").value = String(lojaAtual.ativa)
+    document.getElementById("loja-numero-mesas").value = (lojaAtual.numero_mesas !== null && lojaAtual.numero_mesas !== undefined) ? lojaAtual.numero_mesas : ""
     document.getElementById("loja-usar-cor-personalizada").addEventListener("change", (e) => {
     document.getElementById("loja-cor").disabled = !e.target.checked
     })
@@ -890,7 +968,8 @@ document.getElementById("btn-salvar-loja").addEventListener("click", async () =>
         cor_principal: document.getElementById("loja-usar-cor-personalizada").checked
             ? document.getElementById("loja-cor").value
             : null,
-        ativa: document.getElementById("loja-ativa").value === "true"
+        ativa: document.getElementById("loja-ativa").value === "true",
+        numero_mesas: document.getElementById("loja-numero-mesas").value === "" ? null : Math.max(0, parseInt(document.getElementById("loja-numero-mesas").value))
     }
 
     const { error } = await sb.from("lojas").update(atualizacao).eq("id", lojaAtual.id)
@@ -1220,7 +1299,7 @@ async function carregarMesas() {
     Object.keys(porMesa).sort().forEach(mesa => {
         const pedidos = porMesa[mesa]
         const totalMesa = pedidos.reduce((s, p) => s + Number(p.total), 0)
-        const mesaSegura = escapeHtml(mesa)
+        const mesaSegura = escaparHtml(mesa)
 
         const card = document.createElement("div")
         card.className = "mesa-card"
@@ -1234,14 +1313,14 @@ async function carregarMesas() {
                     </div>
                     ${p.itens.map(i => `
                         <div class="pedido-item">
-                            ${i.quantity}x ${i.name} — R$ ${(i.price * i.quantity).toFixed(2).replace(".", ",")}
-                            ${i.opcoes && i.opcoes.length ? `<br><span style="font-size:11px;color:#8a7361;">${agruparOpcoesPorGrupo(i.opcoes).join(" · ")}</span>` : ""}
+                            ${escaparHtml(i.quantity)}x ${escaparHtml(i.name)} — R$ ${(i.price * i.quantity).toFixed(2).replace(".", ",")}
+                            ${i.opcoes && i.opcoes.length ? `<br><span style="font-size:11px;color:#8a7361;">${escaparHtml(agruparOpcoesPorGrupo(i.opcoes).join(" · "))}</span>` : ""}
                         </div>
                     `).join("")}
                 </div>
             `).join("")}
             <div class="mesa-acoes">
-                <button class="btn-mesa-finalizar" data-mesa="${escapeHtml(mesa)}"><i class="fa fa-check"></i> Finalizar comanda</button>
+                <button class="btn-mesa-finalizar" data-mesa="${escaparHtml(mesa)}"><i class="fa fa-check"></i> Finalizar comanda</button>
             </div>
         `
         box.appendChild(card)
@@ -1271,12 +1350,153 @@ document.getElementById("lista-mesas").addEventListener("click", (event) => {
 })
 
 // ============================================================
-// FINALIZAR COMANDA DA MESA
-// Trava de duplo clique feita no listener acima (desabilita o
-// botão específico enquanto a função roda).
+// ABA "MODO GARÇOM" (grid rápido de mesas pro garçom)
+// Mostra um quadrado por mesa (1 a numero_mesas). Mesa sem comanda
+// aberta fica "livre"; mesa com comanda aberta mostra o total atual
+// e fica destacada. Reaproveita a mesma tabela pedidos_mesa que a
+// aba Mesas já usa — só muda a forma de exibir.
+//
+// IMPORTANTE: depende de "numero_mesas" existir na tabela "lojas" e
+// de um campo "Número de mesas" no formulário de Dados da loja. O
+// Brasa Mix ainda não tem esse modo ativo — essas funções ficam
+// prontas no código mas só precisam ser chamadas (em iniciarPainel)
+// quando vocês decidirem ligar o Modo Garçom de verdade.
 // ============================================================
-async function finalizarMesa(mesa) {
+
+// Formata "há X min" / "há X h" a partir do created_at do primeiro
+// pedido da mesa — ajuda o garçom a notar mesas abertas há muito tempo.
+function formatarTempoAberta(dataCriacao) {
+    const minutos = Math.floor((Date.now() - new Date(dataCriacao).getTime()) / 60000)
+    if (minutos < 1) return "agora"
+    if (minutos < 60) return `há ${minutos} min`
+    const horas = Math.floor(minutos / 60)
+    return `há ${horas}h${minutos % 60 ? (minutos % 60) + "min" : ""}`
+}
+
+// Guarda quais mesas têm pedido novo desde a última vez que o
+// garçom olhou o grid (populado pelo realtime, limpo ao abrir o modal).
+const mesasComPedidoNovo = new Set()
+
+async function carregarModoGarcom() {
+    const msg = document.getElementById("msg-garcom")
+    const grid = document.getElementById("grid-garcom")
+
+    const numeroMesas = lojaAtual.numero_mesas
+    if (!numeroMesas || numeroMesas < 1) {
+        msg.innerHTML = ""
+        grid.className = ""
+        grid.innerHTML = `<p class="garcom-sem-config">Configure o número de mesas em <a onclick="document.querySelector('.aba-btn[data-aba=loja]').click()">Dados da loja</a> pra usar o Modo Garçom.</p>`
+        return
+    }
+
+    const { data, error } = await sb
+        .from("pedidos_mesa")
+        .select("*")
+        .eq("loja_id", lojaAtual.id)
+        .eq("status", "aberto")
+        .order("created_at", { ascending: true })
+
+    if (error) {
+        msg.innerHTML = `<div class="aviso aviso-erro">Erro ao carregar mesas.</div>`
+        return
+    }
+    msg.innerHTML = ""
+
+    const porMesa = {}
+    ;(data || []).forEach(p => { (porMesa[p.mesa] ||= []).push(p) })
+
+    grid.className = "garcom-grid"
+    grid.innerHTML = ""
+    for (let n = 1; n <= numeroMesas; n++) {
+        const mesaStr = String(n)
+        const pedidos = porMesa[mesaStr]
+        const totalMesa = pedidos ? pedidos.reduce((s, p) => s + Number(p.total), 0) : 0
+
+        const tempoAberta = pedidos ? formatarTempoAberta(pedidos[0].created_at) : ""
+
+        const quadrado = document.createElement("div")
+        quadrado.className = "garcom-mesa" + (pedidos ? " aberta" : "")
+        quadrado.innerHTML = `
+            <span class="garcom-mesa-bolinha${mesasComPedidoNovo.has(mesaStr) ? " visivel" : ""}"></span>
+            <span class="garcom-mesa-numero">Mesa ${n}</span>
+            ${pedidos
+                ? `<span class="garcom-mesa-total">R$ ${totalMesa.toFixed(2).replace(".", ",")}</span><span class="garcom-mesa-tempo">${tempoAberta}</span>`
+                : `<span class="garcom-mesa-total">Livre</span>`}
+        `
+        quadrado.addEventListener("click", () => {
+            mesasComPedidoNovo.delete(mesaStr)
+            abrirModalGarcom(mesaStr, pedidos || null)
+        })
+        grid.appendChild(quadrado)
+    }
+}
+
+// ============================================================
+// MODAL DE AÇÕES DA MESA (Modo Garçom)
+// ============================================================
+function abrirModalGarcom(mesa, pedidos) {
+    document.getElementById("garcom-modal-titulo").textContent = `Mesa ${mesa}`
+
+    const comandaBox = document.getElementById("garcom-modal-comanda")
+    const btnFechar = document.getElementById("btn-garcom-fechar")
+
+    if (pedidos && pedidos.length) {
+        const totalMesa = pedidos.reduce((s, p) => s + Number(p.total), 0)
+        const textoItens = pedidos.map(p => p.itens.map(i => `${escaparHtml(i.quantity)}x ${escaparHtml(i.name)}`).join("\n")).join("\n")
+        comandaBox.innerHTML = `
+            <div class="historico-texto" style="max-height:200px;overflow-y:auto;">${textoItens}</div>
+            <p style="font-weight:800;margin-top:8px;">Total: R$ ${totalMesa.toFixed(2).replace(".", ",")}</p>
+        `
+        btnFechar.style.display = "flex"
+    } else {
+        comandaBox.innerHTML = `<p style="color:#8a7361;font-size:14px;">Mesa livre, sem pedido aberto.</p>`
+        btnFechar.style.display = "none"
+    }
+
+    document.getElementById("btn-garcom-incluir").onclick = () => abrirCardapioGarcom(mesa)
+    btnFechar.onclick = function () {
+        document.getElementById("modal-garcom").style.display = "none"
+        finalizarMesa(mesa, btnFechar)
+    }
+
+    document.getElementById("modal-garcom").style.display = "flex"
+}
+
+document.getElementById("btn-garcom-cancelar").addEventListener("click", () => {
+    document.getElementById("modal-garcom").style.display = "none"
+})
+
+// Abre o cardápio público (o mesmo index.html do cliente) dentro de
+// um iframe em tela cheia, já com ?mesa=N — reaproveita 100% do
+// carrinho/checkout que já existe, sem duplicar nada aqui no admin.
+function abrirCardapioGarcom(mesa) {
+    document.getElementById("modal-garcom").style.display = "none"
+    document.getElementById("garcom-iframe-titulo").textContent = `Mesa ${mesa} — incluindo pedido`
+    document.getElementById("garcom-iframe").src = `./index.html?mesa=${encodeURIComponent(mesa)}`
+    document.getElementById("modal-garcom-iframe").style.display = "flex"
+}
+
+function fecharModalGarcomIframe() {
+    document.getElementById("modal-garcom-iframe").style.display = "none"
+    document.getElementById("garcom-iframe").src = ""
+    carregarModoGarcom()
+}
+
+// ============================================================
+// FINALIZAR COMANDA DA MESA
+// Chamada tanto pelo botão "Finalizar comanda" da aba Mesas quanto
+// pelo botão "Fechar comanda" do modal do Modo Garçom — por isso
+// recebe um segundo parâmetro opcional (btnFinalizar) pra travar
+// contra duplo clique/toque nos dois lugares, sem duplicar código.
+// ============================================================
+async function finalizarMesa(mesa, btnFinalizar) {
     if (!confirm(`Finalizar a comanda da mesa ${mesa}? Isso vai enviar o resumo pro WhatsApp da loja.`)) return
+
+    if (btnFinalizar) {
+        if (btnFinalizar.disabled) return
+        btnFinalizar.disabled = true
+        btnFinalizar.textContent = "Finalizando..."
+    }
 
     const abaWhats = window.open("", "_blank")
 
@@ -1291,6 +1511,7 @@ async function finalizarMesa(mesa) {
     if (erroBusca || !pedidos || !pedidos.length) {
         alert("Não foi possível carregar os pedidos dessa mesa.")
         if (abaWhats) abaWhats.close()
+        if (btnFinalizar) { btnFinalizar.disabled = false; btnFinalizar.innerHTML = '<i class="fa fa-check"></i> Finalizar comanda' }
         return
     }
 
@@ -1303,6 +1524,7 @@ async function finalizarMesa(mesa) {
     if (erroUpdate) {
         alert("Erro ao finalizar: " + erroUpdate.message)
         if (abaWhats) abaWhats.close()
+        if (btnFinalizar) { btnFinalizar.disabled = false; btnFinalizar.innerHTML = '<i class="fa fa-check"></i> Finalizar comanda' }
         return
     }
 
@@ -1336,41 +1558,41 @@ async function finalizarMesa(mesa) {
         console.error("Erro ao gravar relatório do dia", err)
     }
 
-    try {
-        const quantidadesPorProduto = {}
-        pedidos.forEach(p => {
-            p.itens.forEach(i => {
-                quantidadesPorProduto[i.id] = (quantidadesPorProduto[i.id] || 0) + i.quantity
-            })
-        })
-        await baixarEstoque(quantidadesPorProduto, sb)
-        await carregarProdutos()
-    } catch (err) {
-        console.error("Erro ao baixar estoque da mesa", mesa, err)
-        alert("A comanda foi finalizada e o WhatsApp foi enviado normalmente, mas houve um erro ao atualizar o estoque. Confira o estoque manualmente na aba Produtos.")
-    }
+    // O estoque de cada item já foi descontado no momento em que o
+    // pedido foi enviado lá da mesa (script.js) — não desconta de novo
+    // aqui, senão contaria em dobro.
+    await carregarProdutos() // garante que a lista reflita o estoque mais recente
 
     await carregarMesas()
+    await carregarModoGarcom()
 }
 
-async function baixarEstoque(quantidadesPorProduto, cliente) {
-    const tarefas = Object.entries(quantidadesPorProduto).map(async ([id, qtdComprada]) => {
+// ============================================================
+// DEVOLVER ESTOQUE
+// Usado quando um pedido de mesa é cancelado antes da comanda
+// fechar — o estoque já tinha sido descontado no momento do pedido
+// (script.js), então cancelar precisa devolver essa quantidade. Se
+// o produto ficou marcado "esgotado" por causa desse desconto,
+// desmarca automaticamente ao devolver.
+// ============================================================
+async function devolverEstoque(quantidadesPorProduto, cliente) {
+    const tarefas = Object.entries(quantidadesPorProduto).map(async ([id, qtd]) => {
         try {
             const { data: prod, error: erroBusca } = await cliente
                 .from("produtos")
-                .select("estoque")
+                .select("estoque, esgotado")
                 .eq("id", id)
                 .single()
 
             if (erroBusca || !prod || prod.estoque === null || prod.estoque === undefined) return
 
-            const novoEstoque = Math.max(0, prod.estoque - qtdComprada)
+            const novoEstoque = prod.estoque + qtd
             const atualizacao = { estoque: novoEstoque }
-            if (novoEstoque === 0) atualizacao.esgotado = true
+            if (prod.esgotado && novoEstoque > 0) atualizacao.esgotado = false
 
             await cliente.from("produtos").update(atualizacao).eq("id", id)
         } catch (err) {
-            console.error("Erro ao baixar estoque do produto", id, err)
+            console.error("Erro ao devolver estoque do produto", id, err)
         }
     })
     await Promise.all(tarefas)
@@ -1457,6 +1679,51 @@ async function cancelarPedido(id) {
     await carregarMesas()
 }
 
+async function cancelarPedido(id) {
+    if (!confirm("Cancelar este pedido? Ele será removido da comanda e não entra no fechamento.")) return
+
+    // Busca os itens ANTES de apagar, pra saber o que devolver ao
+    // estoque (o desconto já aconteceu quando o pedido foi enviado).
+    const { data: pedido } = await sb
+        .from("pedidos_mesa")
+        .select("itens")
+        .eq("id", id)
+        .eq("loja_id", lojaAtual.id)
+        .single()
+
+    const { error } = await sb.from("pedidos_mesa")
+        .delete()
+        .eq("id", id)
+        .eq("loja_id", lojaAtual.id) // trava extra: só apaga pedido da própria loja
+
+    if (error) {
+        alert("Não foi possível cancelar: " + error.message)
+        return
+    }
+
+    if (pedido && pedido.itens) {
+        const quantidadesPorProduto = {}
+        pedido.itens.forEach(i => {
+            quantidadesPorProduto[i.id] = (quantidadesPorProduto[i.id] || 0) + i.quantity
+        })
+        try {
+            await devolverEstoque(quantidadesPorProduto, sb)
+            await carregarProdutos()
+        } catch (err) {
+            console.error("Erro ao devolver estoque do pedido cancelado", id, err)
+        }
+    }
+
+    await carregarMesas()
+    await carregarModoGarcom()
+}
+
+// ============================================================
+// REALTIME — atualizações de pedidos de mesa
+// Escuta novos pedidos gravados em pedidos_mesa (pelo site público,
+// no modo mesa). Se a aba Mesas ou o Modo Garçom já estiverem
+// abertos, recarrega a lista na hora; senão, só acende a bolinha.
+// ============================================================
 function inscreverAtualizacoesMesas() {
     if (canalMesasInscrito) return
     canalMesasInscrito = true
@@ -1464,12 +1731,21 @@ function inscreverAtualizacoesMesas() {
     sb.channel("pedidos-mesa-painel")
         .on("postgres_changes",
             { event: "INSERT", schema: "public", table: "pedidos_mesa", filter: `loja_id=eq.${lojaAtual.id}` },
-            () => {
+            (payload) => {
                 const abaMesasAtiva = document.getElementById("secao-mesas").classList.contains("ativa")
                 if (abaMesasAtiva) {
                     carregarMesas()
                 } else {
                     document.getElementById("bolinha-mesas").classList.add("visivel")
+                }
+
+                const abaGarcomAtiva = document.getElementById("secao-garcom").classList.contains("ativa")
+                const mesaDoPedido = payload.new && payload.new.mesa
+                if (abaGarcomAtiva) {
+                    carregarModoGarcom()
+                } else {
+                    document.getElementById("bolinha-garcom").classList.add("visivel")
+                    if (mesaDoPedido) mesasComPedidoNovo.add(String(mesaDoPedido))
                 }
             }
         )
@@ -1614,17 +1890,16 @@ function renderizarHistoricoMesa() {
         card.className = "historico-card"
         card.innerHTML = `
             <div class="historico-topo">
-                <span class="mesa-nome">Mesa ${escapeHtml(c.mesa)}</span>
+                <span class="mesa-nome">Mesa ${escaparHtml(c.mesa)}</span>
                 <span class="data-hora">${dataHora}</span>
                 <span class="total">${totalFormatado}</span>
             </div>
-            <div class="historico-texto"></div>
+            <div class="historico-texto">${escaparHtml(c.mensagem)}</div>
             <div class="historico-acoes">
                 <button class="btn-historico btn-reenviar" onclick="reenviarHistorico('${c.id}', 'mesa')"><i class="fab fa-whatsapp"></i> Enviar pro WhatsApp</button>
                 <button class="btn-historico btn-copiar" id="btn-copiar-${c.id}" onclick="copiarHistorico('${c.id}', 'mesa')"><i class="fa fa-copy"></i> Copiar comanda</button>
             </div>
         `
-        card.querySelector(".historico-texto").textContent = c.mensagem
         box.appendChild(card)
     })
 }
@@ -1783,7 +2058,7 @@ async function copiarHistorico(id, tipo) {
 // TROCAR DE ABA ARRASTANDO NO CORPO DA PÁGINA (SWIPE)
 // ============================================================
 ;(function(){
-    const ordemAbas = ["mesas", "historico-mesa", "historico-delivery", "produtos", "loja", "dashboard"]
+    const ordemAbas = ["garcom", "mesas", "historico-mesa", "historico-delivery", "produtos", "loja", "dashboard"]
     let inicioX = 0, inicioY = 0, rastreando = false
     let paginaFicouEscondida = false
 
