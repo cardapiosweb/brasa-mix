@@ -676,7 +676,7 @@ function renderGaleriaFotos() {
         const item = document.createElement("div")
         item.className = "foto-item"
         item.innerHTML = `
-            <img src="${url}" />
+            <img src="${escaparHtml(url)}" />
             <button type="button" class="remover-foto" title="Remover" onclick="removerFotoProduto(${i})">×</button>
         `
         galeria.appendChild(item)
@@ -726,7 +726,7 @@ function renderizarOpcoesEditor() {
                 <div class="grupo-opcao-topo">
                     <div class="campo-nome">
                         <label>Nome do grupo (aparece pro cliente)</label>
-                        <input type="text" value="${grupo.nome || ""}" placeholder="Ex: Sabores" oninput="opcoesProdutoAtual[${gi}].nome = this.value" />
+                        <input type="text" value="${escaparHtml(grupo.nome || "")}" placeholder="Ex: Sabores" oninput="opcoesProdutoAtual[${gi}].nome = this.value" />
                     </div>
                     <div class="grupo-opcao-linha2">
                         <div class="campo grupo-opcao-min${grupo.obrigatorio ? " visivel" : ""}" id="campo-min-${gi}">
@@ -768,7 +768,7 @@ function renderizarItensGrupo(gi) {
         const linha = document.createElement("div")
         linha.className = "item-opcao"
         linha.innerHTML = `
-            <input type="text" class="item-opcao-nome" value="${item.nome || ""}" placeholder="Nome do item (ex: Ninho)" oninput="opcoesProdutoAtual[${gi}].itens[${ii}].nome = this.value" />
+            <input type="text" class="item-opcao-nome" value="${escaparHtml(item.nome || "")}" placeholder="Nome do item (ex: Ninho)" oninput="opcoesProdutoAtual[${gi}].itens[${ii}].nome = this.value" />
             <div class="item-opcao-preco-wrap">
                 <input type="number" class="item-opcao-preco" step="0.01" min="0" value="${item.preco_adicional || 0}" placeholder="0,00" oninput="opcoesProdutoAtual[${gi}].itens[${ii}].preco_adicional = parseFloat(this.value)||0" />
             </div>
@@ -1006,8 +1006,8 @@ function renderizarCategorias() {
                 <button type="button" title="Subir" ${i === 0 ? "disabled" : ""} onclick="moverCategoria(${i}, -1)"><i class="fa fa-chevron-up"></i></button>
                 <button type="button" title="Descer" ${i === categoriasAtuais.length - 1 ? "disabled" : ""} onclick="moverCategoria(${i}, 1)"><i class="fa fa-chevron-down"></i></button>
             </div>
-            <input type="text" value="${cat.nome || ""}" placeholder="Nome da categoria" oninput="categoriasAtuais[${i}].nome = this.value" />
-            <input type="text" class="campo-icone" value="${cat.icone || ""}" placeholder="fa-fire (ícone)" oninput="categoriasAtuais[${i}].icone = this.value" />
+            <input type="text" value="${escaparHtml(cat.nome || "")}" placeholder="Nome da categoria" oninput="categoriasAtuais[${i}].nome = this.value" />
+            <input type="text" class="campo-icone" value="${escaparHtml(cat.icone || "")}" placeholder="fa-fire (ícone)" oninput="categoriasAtuais[${i}].icone = this.value" />
             <button type="button" class="btn-icone apagar" title="Remover" onclick="removerCategoria(${i})"><i class="fa fa-trash"></i></button>
         `
         lista.appendChild(linha)
@@ -1131,9 +1131,9 @@ function renderizarListaProdutos() {
                 <button type="button" title="Subir" ${primeiroDaCategoria ? "disabled" : ""} onclick="moverProduto('${p.id}', -1)"><i class="fa fa-chevron-up"></i></button>
                 <button type="button" title="Descer" ${ultimoDaCategoria ? "disabled" : ""} onclick="moverProduto('${p.id}', 1)"><i class="fa fa-chevron-down"></i></button>
             </div>` : ""}
-            <img src="${(p.fotos && p.fotos[0]) || ''}" onerror="this.style.background='#eee'" />
+            <img src="${escaparHtml((p.fotos && p.fotos[0]) || '')}" onerror="this.style.background='#eee'" />
             <div class="info">
-                <strong>${p.nome} ${p.oferta ? '<span class="tag tag-oferta">Oferta</span>' : ''} ${p.esgotado ? '<span class="tag tag-esgotado">Esgotado</span>' : ''} ${p.retirada_apenas ? '<span class="tag tag-retirada">Só retirada</span>' : ''} ${(p.estoque !== null && p.estoque !== undefined) ? `<span class="tag" style="background:#8a7361;color:white;">Estoque: ${p.estoque}</span>` : ''}</strong>
+                <strong>${escaparHtml(p.nome)} ${p.oferta ? '<span class="tag tag-oferta">Oferta</span>' : ''} ${p.esgotado ? '<span class="tag tag-esgotado">Esgotado</span>' : ''} ${p.retirada_apenas ? '<span class="tag tag-retirada">Só retirada</span>' : ''} ${(p.estoque !== null && p.estoque !== undefined) ? `<span class="tag" style="background:#8a7361;color:white;">Estoque: ${escaparHtml(p.estoque)}</span>` : ''}</strong>
                 <span>R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</span>
             </div>
             <div class="produto-acoes">
