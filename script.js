@@ -419,6 +419,70 @@ function selecionarPagamento(tipo) {
 
 
 // ===========================
+// MODAL DE CONFIRMAÇÃO PIX
+// Só é usado quando o pagamento escolhido é "Pix" E a loja tem uma
+// chave cadastrada (aba Dados da loja, admin). Se a loja não tiver
+// chave, o fluxo antigo (pedido vai só pro WhatsApp, sem esse passo
+// extra) continua normal — ver checkoutBtn.
+// ===========================
+function abrirModalPix(total) {
+    const totalFormatado = total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+    document.getElementById("pix-total").textContent = totalFormatado
+    document.getElementById("pix-chave-texto").textContent = loja.chavePix
+
+    document.getElementById("pix-comprovante-btn").onclick = function () {
+        const msg = encodeURIComponent(
+            `Olá! Segue o comprovante do meu pedido no valor de ${totalFormatado} (${loja.nome}).`
+        )
+        window.open(`https://wa.me/${loja.whatsapp}?text=${msg}`, "_blank")
+    }
+
+    document.getElementById("pix-modal").classList.add("open")
+    document.body.style.overflow = "hidden"
+    history.pushState({ pixModalAberto: true }, "")
+}
+
+function fecharModalPix() {
+    document.getElementById("pix-modal").classList.remove("open")
+    document.body.style.overflow = ""
+    if (history.state && history.state.pixModalAberto) {
+        history.back()
+    }
+}
+
+function fecharModalPixSeOverlay(event) {
+    if (event.target === document.getElementById("pix-modal")) {
+        fecharModalPix()
+    }
+}
+
+document.getElementById("pix-fechar-btn").addEventListener("click", fecharModalPix)
+
+document.getElementById("pix-copiar-btn").addEventListener("click", async function () {
+    const chave = loja.chavePix || ""
+    const btn = document.getElementById("pix-copiar-btn")
+    const textoOriginal = btn.innerHTML
+
+    try {
+        await navigator.clipboard.writeText(chave)
+    } catch (err) {
+        // Navegador antigo / sem permissão: usa o método antigo como reserva
+        const textarea = document.createElement("textarea")
+        textarea.value = chave
+        textarea.style.position = "fixed"
+        textarea.style.opacity = "0"
+        document.body.appendChild(textarea)
+        textarea.select()
+        try { document.execCommand("copy") } catch (err2) { console.error("Falha ao copiar", err2) }
+        document.body.removeChild(textarea)
+    }
+
+    btn.innerHTML = `<i class="fa fa-check"></i> Copiado!`
+    setTimeout(() => { btn.innerHTML = textoOriginal }, 1800)
+})
+
+
+// ===========================
 // VALIDAÇÃO DE ESTOQUE EM TEMPO REAL
 // Calcula quanto ainda pode ser adicionado de um produto,
 // descontando o que já está no carrinho (soma todas as variantes/
@@ -888,6 +952,14 @@ checkoutBtn.addEventListener("click", async function () {
             linhaPagamento
 
         window.open(`https://wa.me/${loja.whatsapp}?text=${encodeURIComponent(message)}`, "_blank")
+
+        // Pagamento Pix com chave cadastrada na loja (aba Dados da loja,
+        // admin): depois de mandar o pedido pro WhatsApp normalmente,
+        // mostra a chave pra copiar e o botão de enviar comprovante. Sem
+        // chave cadastrada, o fluxo segue igual ao de sempre (nada muda).
+        if (tipoPagamento === "Pix" && loja.chavePix) {
+            abrirModalPix(total)
+        }
 
         // Soma os itens (mesmo formato usado no histórico de mesa) —
         // reaproveitado tanto pro relatório do dia quanto pro histórico.

@@ -419,11 +419,15 @@
                 <div id="msg-loja"></div>
                 <div class="grid2">
                     <div class="campo"><label>Nome da loja</label><input id="loja-nome" /></div>
-                    <div class="campo"><label>WhatsApp (só números, com DDD)</label><input id="loja-whatsapp" placeholder="91991396925" /></div>
+                    <div class="campo"><label>WhatsApp (só números, com DDI e DDD)</label><input id="loja-whatsapp" placeholder="5591991396925" /></div>
                     <div class="campo"><label>Frase de efeito (tagline)</label><input id="loja-tagline" /></div>
                     <div class="campo"><label>Endereço</label><input id="loja-endereco" /></div>
                     <div class="campo"><label>Título da seção do cardápio</label><input id="loja-titulo-menu" /></div>
                     <div class="campo"><label>Texto do horário (exibido no site)</label><input id="loja-texto-horario" /></div>
+                    <div class="campo">
+                        <label>Chave Pix (deixe em branco pra não mostrar essa opção)</label>
+                        <input id="loja-chave-pix" placeholder="Ex: 00.000.000/0000-00" />
+                    </div>
                 </div>
                 <div class="grid2">
                     <div class="campo">
@@ -977,6 +981,7 @@ function preencherFormularioLoja() {
     document.getElementById("loja-endereco").value = lojaAtual.endereco || ""
     document.getElementById("loja-titulo-menu").value = lojaAtual.titulo_secao_menu || ""
     document.getElementById("loja-texto-horario").value = lojaAtual.texto_horario || ""
+    document.getElementById("loja-chave-pix").value = lojaAtual.chave_pix || ""
     document.getElementById("loja-logo").value = lojaAtual.logo_url || ""
     document.getElementById("loja-banner").value = lojaAtual.banner_url || ""
     document.getElementById("loja-logo-preview").src = lojaAtual.logo_url || ""
@@ -1007,6 +1012,7 @@ document.getElementById("btn-salvar-loja").addEventListener("click", async () =>
         endereco: document.getElementById("loja-endereco").value.trim(),
         titulo_secao_menu: document.getElementById("loja-titulo-menu").value.trim(),
         texto_horario: document.getElementById("loja-texto-horario").value.trim(),
+        chave_pix: document.getElementById("loja-chave-pix").value.trim(),
         logo_url: document.getElementById("loja-logo").value.trim(),
         banner_url: document.getElementById("loja-banner").value.trim(),
         cor_principal: document.getElementById("loja-usar-cor-personalizada").checked

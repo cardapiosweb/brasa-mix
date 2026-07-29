@@ -60,6 +60,7 @@ async function carregarDadosDaLoja() {
         corPrincipalClara: lojaDb.cor_principal_clara,
         tituloSecaoMenu: lojaDb.titulo_secao_menu,
         textoHorario: lojaDb.texto_horario,
+        chavePix: lojaDb.chave_pix,
         horario: lojaDb.horario || {}
     }
 

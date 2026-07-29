@@ -329,6 +329,22 @@
         justify-content: center;
         }
         #options-modal.open { display: flex; }
+
+        /* ===== MODAL DE CONFIRMAÇÃO PIX ===== */
+        #pix-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(36,27,22,0.7);
+            z-index: 215;
+            align-items: center;
+            justify-content: center;
+        }
+        #pix-modal.open { display: flex; }
+        #pix-chave-box { background: var(--creme); }
+        body.dark #pix-chave-box { background: #171210; border-color: #3A2C24; }
+        body.dark #taxa-entrega-info,
+        body.dark #pix-modal p[style*="laranja-claro"] { background: #241B16; border-color: #3A2C24; color: #C9B79E; }
         .options-modal-box {
             background: var(--creme);
             border-radius: 16px;
@@ -921,6 +937,46 @@
                     <i class="fa fa-cart-plus"></i> Adicionar - <span id="options-total">R$ 0,00</span>
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL DE CONFIRMAÇÃO PIX ===== -->
+    <!-- Aparece no lugar do redirecionamento direto pro WhatsApp quando
+         o pagamento é Pix e a loja tem uma chave cadastrada (aba Dados
+         da loja, admin). Se a loja não tiver chave, o fluxo antigo
+         (direto pro WhatsApp) continua normal — ver script.js. -->
+    <div id="pix-modal" onclick="fecharModalPixSeOverlay(event)">
+        <div class="options-modal-box" style="text-align:center;">
+            <p class="product-modal-name" style="margin-bottom:4px;">
+                <i class="fa fa-circle-check" style="color: var(--verde-manjericao);"></i>
+                Pedido enviado!
+            </p>
+            <p class="product-modal-price" id="pix-total" style="margin-bottom:18px;"></p>
+
+            <div id="pix-chave-box"
+                style="display:flex;align-items:center;justify-content:space-between;gap:8px;
+                       border:1.5px solid var(--linha);border-radius:10px;padding:10px 14px;
+                       margin-bottom:14px;text-align:left;">
+                <span id="pix-chave-texto" style="font-size:14px;font-weight:600;word-break:break-all;"></span>
+                <button type="button" id="pix-copiar-btn" class="btn-share-whats" style="flex:0 0 auto;padding:8px 12px;">
+                    <i class="fa fa-copy"></i> Copiar
+                </button>
+            </div>
+
+            <p style="display:flex;align-items:flex-start;gap:8px;text-align:left;font-size:13px;
+                      color:var(--carvao-suave);background:var(--laranja-claro);border-radius:8px;
+                      padding:10px 12px;margin-bottom:16px;">
+                <i class="fa fa-circle-info" style="color: var(--laranja);margin-top:2px;"></i>
+                Pague com a chave Pix acima no app do seu banco e nos envie o comprovante.
+            </p>
+
+            <button type="button" class="btn-info-whats" id="pix-comprovante-btn" style="width:100%;margin-bottom:10px;">
+                <i class="fab fa-whatsapp"></i> Enviar comprovante
+            </button>
+
+            <button type="button" class="product-modal-back" id="pix-fechar-btn" style="margin:0 auto;">
+                Fechar
+            </button>
         </div>
     </div>
 
