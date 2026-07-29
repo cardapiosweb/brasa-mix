@@ -425,16 +425,29 @@ function selecionarPagamento(tipo) {
 // chave, o fluxo antigo (pedido vai só pro WhatsApp, sem esse passo
 // extra) continua normal — ver checkoutBtn.
 // ===========================
-function abrirModalPix(total) {
+function abrirModalPix(total, urlWhats) {
     const totalFormatado = total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
     document.getElementById("pix-total").textContent = totalFormatado
     document.getElementById("pix-chave-texto").textContent = loja.chavePix
 
-    document.getElementById("pix-comprovante-btn").onclick = function () {
-        const msg = encodeURIComponent(
-            `Olá! Segue o comprovante do meu pedido no valor de ${totalFormatado} (${loja.nome}).`
-        )
-        window.open(`https://wa.me/${loja.whatsapp}?text=${msg}`, "_blank")
+    // Copia a chave primeiro e só então abre o WhatsApp com o pedido —
+    // isso acontece no clique do próprio botão (ação genuína do
+    // usuário), então não corre risco de bloqueio de pop-up mesmo que
+    // esse clique venha depois de outros passos assíncronos.
+    document.getElementById("pix-comprovante-btn").onclick = async function () {
+        try {
+            await navigator.clipboard.writeText(loja.chavePix || "")
+        } catch (err) {
+            const textarea = document.createElement("textarea")
+            textarea.value = loja.chavePix || ""
+            textarea.style.position = "fixed"
+            textarea.style.opacity = "0"
+            document.body.appendChild(textarea)
+            textarea.select()
+            try { document.execCommand("copy") } catch (err2) { console.error("Falha ao copiar", err2) }
+            document.body.removeChild(textarea)
+        }
+        window.open(urlWhats, "_blank")
     }
 
     document.getElementById("pix-modal").classList.add("open")
@@ -951,14 +964,17 @@ checkoutBtn.addEventListener("click", async function () {
             `\n${modoEntrega}\n` +
             linhaPagamento
 
-        window.open(`https://wa.me/${loja.whatsapp}?text=${encodeURIComponent(message)}`, "_blank")
+        const urlWhats = `https://wa.me/${loja.whatsapp}?text=${encodeURIComponent(message)}`
 
         // Pagamento Pix com chave cadastrada na loja (aba Dados da loja,
-        // admin): depois de mandar o pedido pro WhatsApp normalmente,
-        // mostra a chave pra copiar e o botão de enviar comprovante. Sem
-        // chave cadastrada, o fluxo segue igual ao de sempre (nada muda).
+        // admin): NÃO abre o WhatsApp direto — mostra a chave primeiro,
+        // pra dar tempo do cliente copiar. O envio só acontece quando
+        // ele clicar no botão do próprio modal. Sem chave cadastrada, o
+        // fluxo segue igual ao de sempre (WhatsApp direto).
         if (tipoPagamento === "Pix" && loja.chavePix) {
-            abrirModalPix(total)
+            abrirModalPix(total, urlWhats)
+        } else {
+            window.open(urlWhats, "_blank")
         }
 
         // Soma os itens (mesmo formato usado no histórico de mesa) —
