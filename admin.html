@@ -53,35 +53,97 @@
     #erro-login{color:var(--erro);font-size:13px;margin-top:12px;display:none;}
 
     #tela-painel{display:none;}
+
+    /* ===== Cabeçalho novo: saudação + sino + menu (substitui header.topo) ===== */
     header.topo{
-        background:var(--carvao);color:white;padding:14px 20px;
-        display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+        background:var(--carvao);color:white;padding:16px 20px;
+        display:flex;align-items:center;justify-content:space-between;gap:12px;
+        position:sticky;top:0;z-index:60;
     }
-    header.topo h1{font-size:18px;color:white;}
-    header.topo .sub{font-size:12px;color:#C9B79E;}
-    #btn-sair{background:none;border:1.5px solid #5a483c;color:#F3E9DA;border-radius:8px;padding:8px 14px;font-size:13px;}
-    #btn-sair:hover{border-color:var(--tinta);}
+    header.topo .saudacao{min-width:0;flex:1;}
+    header.topo .saudacao .nome-loja{font-size:16px;font-weight:800;color:white;display:block;}
+    header.topo .saudacao .status-loja{font-size:12px;color:#C9B79E;display:flex;align-items:center;gap:5px;}
+    header.topo .status-loja .bolinha-status{width:7px;height:7px;border-radius:50%;background:#6b7280;flex-shrink:0;}
+    header.topo .status-loja.aberta .bolinha-status{background:#4ADE80;}
+    header.topo .acoes-topo{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+    .btn-topo-icone{
+        background:none;border:none;color:#F3E9DA;width:38px;height:38px;border-radius:10px;
+        font-size:17px;position:relative;display:flex;align-items:center;justify-content:center;
+    }
+    .btn-topo-icone:hover{background:rgba(255,255,255,0.08);}
+    .btn-topo-icone .bolinha-notif{
+        position:absolute;top:6px;right:7px;width:8px;height:8px;border-radius:50%;
+        background:var(--tinta);border:1.5px solid var(--carvao);display:none;
+    }
+    .btn-topo-icone .bolinha-notif.visivel{display:block;}
 
-    .abas{
-    display:flex;gap:6px;padding:14px 16px 0;max-width:1000px;margin:0 auto;
-    flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
-    touch-action:none;cursor:grab;user-select:none;
+    /* ===== Menu suspenso (⋮) ===== */
+    .menu-suspenso{
+        position:fixed;top:0;right:0;height:100%;width:min(260px, 80vw);
+        background:white;z-index:120;box-shadow:-6px 0 24px rgba(0,0,0,.18);
+        transform:translateX(100%);transition:transform .25s ease;
+        display:flex;flex-direction:column;padding:18px 14px;
     }
-    .abas::-webkit-scrollbar{display:none;}
-    .abas.arrastando{ cursor:grabbing; }
-    .aba-btn{
-        background:none;border:none;padding:10px 16px;font-weight:700;font-size:14px;
-        color:#8a7361;border-bottom:3px solid transparent;position:relative;
-        white-space:nowrap;flex-shrink:0;
+    .menu-suspenso.aberto{transform:translateX(0);}
+    .menu-suspenso h3{font-size:13px;color:#8a7361;text-transform:uppercase;letter-spacing:.04em;margin:6px 0 10px 8px;}
+    .menu-item{
+        display:flex;align-items:center;gap:12px;padding:12px 10px;border-radius:10px;
+        font-weight:700;font-size:14.5px;color:var(--carvao);background:none;border:none;text-align:left;width:100%;
     }
-    .aba-btn.ativa{color:var(--tinta);border-color:var(--tinta);}
-    .aba-btn .bolinha{
-        position:absolute;top:6px;right:8px;width:8px;height:8px;border-radius:50%;
-        background:var(--tinta);display:none;
+    .menu-item i{width:20px;text-align:center;color:var(--tinta);}
+    .menu-item:hover{background:var(--tinta-clara);}
+    .menu-item.sair{color:var(--erro);margin-top:auto;}
+    .menu-item.sair i{color:var(--erro);}
+    #overlay-menu{
+        display:none;position:fixed;inset:0;background:rgba(36,27,22,.5);z-index:115;
     }
-    .aba-btn .bolinha.visivel{display:block;}
+    #overlay-menu.aberto{display:block;}
 
-    main{max-width:1000px;margin:0 auto;padding:20px;}
+    /* ===== Painel de notificações (sino) ===== */
+    #overlay-notif{
+        display:none;position:fixed;inset:0;background:rgba(36,27,22,.5);z-index:115;
+    }
+    #overlay-notif.aberto{display:block;}
+    .painel-notif{
+        position:fixed;top:0;right:0;height:100%;width:min(320px, 88vw);
+        background:white;z-index:120;box-shadow:-6px 0 24px rgba(0,0,0,.18);
+        transform:translateX(100%);transition:transform .25s ease;
+        display:flex;flex-direction:column;
+    }
+    .painel-notif.aberto{transform:translateX(0);}
+    .painel-notif-topo{
+        display:flex;align-items:center;justify-content:space-between;
+        padding:18px 16px 14px;border-bottom:1px solid var(--linha);flex-shrink:0;
+    }
+    .painel-notif-topo h3{font-size:16px;}
+    .painel-notif-topo button{background:none;border:none;font-size:17px;color:#8a7361;width:32px;height:32px;border-radius:8px;}
+    .painel-notif-topo button:hover{background:var(--creme);}
+    #lista-notif{flex:1;overflow-y:auto;padding:8px 10px;}
+    .notif-item{
+        display:flex;flex-direction:column;gap:2px;text-align:left;width:100%;
+        background:none;border:none;border-radius:10px;padding:11px 10px;margin-bottom:2px;
+    }
+    .notif-item:hover{background:var(--creme);}
+    .notif-item .notif-texto{font-size:13.5px;font-weight:700;color:var(--carvao);}
+    .notif-item .notif-hora{font-size:11.5px;color:#8a7361;}
+    .notif-vazio{color:#8a7361;font-size:13.5px;text-align:center;padding:40px 16px;}
+
+    /* ===== Nav inferior fixa (mobile-first) ===== */
+    .nav-inferior{
+        position:fixed;left:0;right:0;bottom:0;z-index:90;
+        background:white;border-top:1px solid var(--linha);
+        display:flex;justify-content:space-around;align-items:center;
+        padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+        box-shadow:0 -4px 16px rgba(36,27,22,.06);
+    }
+    .nav-item{
+        background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;
+        color:#8a7361;font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:10px;flex:1;max-width:90px;
+    }
+    .nav-item i{font-size:18px;}
+    .nav-item.ativa{color:var(--tinta);}
+
+    main{max-width:1000px;margin:0 auto;padding:20px;padding-bottom:90px;}
     .painel-secao{display:none;}
     .painel-secao.ativa{display:block;}
 
@@ -364,22 +426,55 @@
 
 <div id="tela-painel">
     <header class="topo">
-        <div>
-            <h1 id="painel-nome-loja">Minha loja</h1>
-            <div class="sub" id="painel-email-usuario"></div>
+        <div class="saudacao">
+            <span class="nome-loja" id="painel-nome-loja">Minha loja</span>
+            <span class="status-loja" id="painel-status-loja"><span class="bolinha-status"></span> <span id="painel-status-texto">Carregando...</span></span>
         </div>
-        <button id="btn-sair">Sair</button>
+        <div class="acoes-topo">
+            <button class="btn-topo-icone" id="btn-sino" title="Notificações">
+                <i class="fa fa-bell"></i>
+                <span class="bolinha-notif" id="bolinha-notif"></span>
+            </button>
+            <button class="btn-topo-icone" id="btn-menu" title="Mais opções">
+                <i class="fa fa-bars"></i>
+            </button>
+        </div>
     </header>
 
-    <div class="abas">
-        <button class="aba-btn" data-aba="garcom" style="display:none;">Modo Garçom <span class="bolinha" id="bolinha-garcom"></span></button>
-        <button class="aba-btn" data-aba="mesas" style="display:none;">Mesas <span class="bolinha" id="bolinha-mesas"></span></button>
-        <button class="aba-btn" data-aba="historico-mesa" style="display:none;">Histórico Mesa</button>
-        <button class="aba-btn ativa" data-aba="historico-delivery">Histórico Delivery <span class="bolinha" id="bolinha-historico-delivery"></span></button>
-        <button class="aba-btn" data-aba="produtos">Produtos</button>
-        <button class="aba-btn" data-aba="loja">Dados da loja</button>
-        <button class="aba-btn" data-aba="dashboard">Dashboard</button>
+    <!-- ===== Botões escondidos: Garçom/Mesas/Histórico Mesa (recurso não
+         usado pelo Brasa Mix, que atende só delivery/retirada). Fica no
+         código pronto pra ativar no futuro se decidirem passar a usar
+         mesas — só não aparecem na navegação por enquanto. ===== -->
+    <div style="display:none;">
+        <button data-aba="garcom">Modo Garçom <span class="bolinha" id="bolinha-garcom"></span></button>
+        <button data-aba="mesas">Mesas <span class="bolinha" id="bolinha-mesas"></span></button>
+        <button data-aba="historico-mesa">Histórico Mesa</button>
     </div>
+
+    <!-- ===== Menu lateral (⋮) ===== -->
+    <div id="overlay-menu"></div>
+    <nav class="menu-suspenso" id="menu-lateral">
+        <h3>Menu</h3>
+        <button class="menu-item sair" id="btn-sair"><i class="fa fa-right-from-bracket"></i> Sair</button>
+    </nav>
+
+    <!-- ===== Painel de notificações (sino) ===== -->
+    <div id="overlay-notif"></div>
+    <div class="painel-notif" id="painel-notif">
+        <div class="painel-notif-topo">
+            <h3>Notificações</h3>
+            <button type="button" id="btn-fechar-notif"><i class="fa fa-xmark"></i></button>
+        </div>
+        <div id="lista-notif"></div>
+    </div>
+
+    <!-- ===== Nav inferior fixa: Delivery é a aba padrão desta loja ===== -->
+    <nav class="nav-inferior">
+        <button class="nav-item ativa" data-aba="historico-delivery"><i class="fa fa-motorcycle"></i> Delivery <span class="bolinha" id="bolinha-historico-delivery"></span></button>
+        <button class="nav-item" data-aba="produtos"><i class="fa fa-utensils"></i> Produtos</button>
+        <button class="nav-item" data-aba="dashboard"><i class="fa fa-gauge"></i> Dashboard</button>
+        <button class="nav-item" data-aba="loja"><i class="fa fa-store"></i> Dados da loja</button>
+    </nav>
 
     <main>
         <section class="painel-secao" id="secao-garcom">
