@@ -143,6 +143,28 @@
     .nav-item i{font-size:18px;}
     .nav-item.ativa{color:var(--tinta);}
 
+    /* Esconde abas que a loja não usa (config-loja.js: MODO_LOJA) */
+    .oculto-modo{display:none!important;}
+
+    /* ===== Aba Início ===== */
+    .inicio-saudacao h2{font-size:20px;}
+    .inicio-saudacao p{color:#8a7361;font-size:13px;margin-top:4px;}
+    .inicio-subtitulo-secao{
+        font-size:13px;color:#8a7361;font-weight:700;text-transform:uppercase;
+        letter-spacing:.03em;margin:22px 0 10px;
+    }
+    .acesso-rapido-grid{
+        display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:10px;
+    }
+    .acesso-rapido-item{
+        background:white;border:1.5px solid var(--linha);border-radius:12px;
+        padding:16px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;
+        font-weight:700;font-size:12.5px;color:var(--carvao);
+        transition:border-color .15s,transform .15s;
+    }
+    .acesso-rapido-item:hover{border-color:var(--tinta);transform:translateY(-2px);}
+    .acesso-rapido-item i{font-size:20px;color:var(--tinta);}
+
     main{max-width:1000px;margin:0 auto;padding:20px;padding-bottom:90px;}
     .painel-secao{display:none;}
     .painel-secao.ativa{display:block;}
@@ -441,20 +463,11 @@
         </div>
     </header>
 
-    <!-- ===== Botões escondidos: Garçom/Mesas/Histórico Mesa (recurso não
-         usado pelo Brasa Mix, que atende só delivery/retirada). Fica no
-         código pronto pra ativar no futuro se decidirem passar a usar
-         mesas — só não aparecem na navegação por enquanto. ===== -->
-    <div style="display:none;">
-        <button data-aba="garcom">Modo Garçom <span class="bolinha" id="bolinha-garcom"></span></button>
-        <button data-aba="mesas">Mesas <span class="bolinha" id="bolinha-mesas"></span></button>
-        <button data-aba="historico-mesa">Histórico Mesa</button>
-    </div>
-
     <!-- ===== Menu lateral (⋮) ===== -->
     <div id="overlay-menu"></div>
     <nav class="menu-suspenso" id="menu-lateral">
         <h3>Menu</h3>
+        <div id="menu-lateral-itens"></div>
         <button class="menu-item sair" id="btn-sair"><i class="fa fa-right-from-bracket"></i> Sair</button>
     </nav>
 
@@ -468,15 +481,42 @@
         <div id="lista-notif"></div>
     </div>
 
-    <!-- ===== Nav inferior fixa: Delivery é a aba padrão desta loja ===== -->
-    <nav class="nav-inferior">
-        <button class="nav-item ativa" data-aba="historico-delivery"><i class="fa fa-motorcycle"></i> Delivery <span class="bolinha" id="bolinha-historico-delivery"></span></button>
-        <button class="nav-item" data-aba="produtos"><i class="fa fa-utensils"></i> Produtos</button>
-        <button class="nav-item" data-aba="dashboard"><i class="fa fa-gauge"></i> Dashboard</button>
-        <button class="nav-item" data-aba="loja"><i class="fa fa-store"></i> Dados da loja</button>
-    </nav>
+    <!-- Preenchida em tempo real por renderizarAbasAdmin(), a partir
+         de ABAS_ADMIN (config-loja.js) — ordem e visibilidade mudam
+         por loja sem tocar em HTML. -->
+    <nav class="nav-inferior" id="nav-inferior"></nav>
 
     <main>
+        <!-- ===== ABA INÍCIO ===== -->
+        <section class="painel-secao ativa" id="secao-inicio">
+            <div class="inicio-saudacao">
+                <h2 id="inicio-titulo">Olá! 👋</h2>
+                <p>Veja o resumo do seu dia.</p>
+            </div>
+
+            <div class="dash-cards" style="margin-top:16px;">
+                <div class="dash-card">
+                    <span class="dash-label">Pedidos hoje</span>
+                    <span class="dash-valor" id="inicio-pedidos-hoje">0</span>
+                </div>
+                <div class="dash-card">
+                    <span class="dash-label">Vendas hoje</span>
+                    <span class="dash-valor" id="inicio-vendas-hoje">R$ 0,00</span>
+                </div>
+            </div>
+
+            <h3 class="inicio-subtitulo-secao">Acesso rápido</h3>
+            <div class="acesso-rapido-grid">
+                <button class="acesso-rapido-item" data-aba="garcom"><i class="fa fa-bell-concierge"></i> Garçom</button>
+                <button class="acesso-rapido-item" data-aba="mesas"><i class="fa fa-chair"></i> Mesas</button>
+                <button class="acesso-rapido-item" data-aba="historico-mesa"><i class="fa fa-receipt"></i> Histórico Mesa</button>
+                <button class="acesso-rapido-item" data-aba="produtos"><i class="fa fa-utensils"></i> Produtos</button>
+                <button class="acesso-rapido-item" data-aba="historico-delivery"><i class="fa fa-motorcycle"></i> Delivery</button>
+                <button class="acesso-rapido-item" data-aba="dashboard"><i class="fa fa-gauge"></i> Dashboard</button>
+                <button class="acesso-rapido-item" data-aba="loja"><i class="fa fa-store"></i> Dados da loja</button>
+            </div>
+        </section>
+
         <section class="painel-secao" id="secao-garcom">
             <div id="msg-garcom"></div>
             <div id="grid-garcom" class="garcom-grid"></div>
@@ -493,7 +533,7 @@
             <div id="lista-historico-mesa"></div>
         </section>
 
-        <section class="painel-secao ativa" id="secao-historico-delivery">
+        <section class="painel-secao" id="secao-historico-delivery">
             <p style="font-size:13px;color:#8a7361;margin:0 0 14px;">Os 30 pedidos de delivery/retirada mais recentes ficam guardados por loja. O texto de cada um é o exato que foi enviado ao WhatsApp no momento do pedido.</p>
             <div id="msg-historico-delivery"></div>
             <div id="lista-historico-delivery"></div>
@@ -1024,7 +1064,7 @@ async function iniciarPainel(user) {
     telaLogin.style.display = "none"
     telaPainel.style.display = "block"
     document.getElementById("painel-nome-loja").textContent = lojaAtual.nome
-    document.getElementById("painel-email-usuario").textContent = user.email
+    document.getElementById("inicio-titulo").textContent = `Olá, ${lojaAtual.nome}! 👋`
 
     preencherFormularioLoja()
     await carregarDashboard()
@@ -1037,34 +1077,109 @@ async function iniciarPainel(user) {
 }
 
 // ============================================================
-// ABAS
+// MONTAGEM DAS ABAS (config-loja.js: ABAS_ADMIN + MODO_LOJA)
+// Gera a barra inferior e o menu (⋮) em tempo real — ordem,
+// posição (nav/menu) e visibilidade por loja ficam só no
+// config-loja.js, sem precisar editar este arquivo.
 // ============================================================
-document.querySelectorAll(".aba-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-        document.querySelectorAll(".aba-btn").forEach(b => b.classList.remove("ativa"))
-        document.querySelectorAll(".painel-secao").forEach(s => s.classList.remove("ativa"))
-        btn.classList.add("ativa")
-        document.getElementById("secao-" + btn.dataset.aba).classList.add("ativa")
-        if (btn.dataset.aba === "dashboard") {
-            carregarDashboard()
-        }
-        if (btn.dataset.aba === "garcom") {
-            carregarModoGarcom()
-            document.getElementById("bolinha-garcom").classList.remove("visivel")
-        }
-        if (btn.dataset.aba === "mesas") {
-            carregarMesas()
-            document.getElementById("bolinha-mesas").classList.remove("visivel")
-        }
-        if (btn.dataset.aba === "historico-mesa") {
-            carregarHistoricoMesa()
-        }
-        if (btn.dataset.aba === "historico-delivery") {
-            carregarHistoricoDelivery()
-            document.getElementById("bolinha-historico-delivery").classList.remove("visivel")
+function renderizarAbasAdmin() {
+    const config = window.MODO_LOJA || {}
+    const abas = window.ABAS_ADMIN || []
+
+    const nav = document.getElementById("nav-inferior")
+    const menu = document.getElementById("menu-lateral-itens")
+    nav.innerHTML = ""
+    menu.innerHTML = ""
+
+    // Início é fixa: sempre a primeira aba da barra inferior, em
+    // toda loja, independente do MODO_LOJA.
+    const btnInicio = document.createElement("button")
+    btnInicio.className = "nav-item ativa"
+    btnInicio.dataset.aba = "inicio"
+    btnInicio.innerHTML = `<i class="fa fa-house"></i> Início`
+    nav.appendChild(btnInicio)
+
+    abas.forEach(aba => {
+        if (aba.requer && config[aba.requer] === false) return
+
+        const btn = document.createElement("button")
+        btn.dataset.aba = aba.id
+        btn.innerHTML = `<i class="fa ${aba.icone}"></i> ${aba.label}` +
+            (aba.bolinha ? ` <span class="bolinha" id="${aba.bolinha}"></span>` : "")
+
+        if (aba.posicao === "menu") {
+            btn.className = "menu-item"
+            menu.appendChild(btn)
+        } else {
+            btn.className = "nav-item"
+            nav.appendChild(btn)
         }
     })
-})
+
+    document.querySelectorAll(".nav-item[data-aba], .menu-item[data-aba], .acesso-rapido-item[data-aba]").forEach(btn => {
+        btn.addEventListener("click", () => irParaAba(btn.dataset.aba))
+    })
+}
+
+renderizarAbasAdmin()
+
+// Atalhos da aba Início seguem a mesma regra "requer" de ABAS_ADMIN.
+function aplicarModoAcessoRapido() {
+    const config = window.MODO_LOJA || {}
+    const abas = window.ABAS_ADMIN || []
+
+    abas.forEach(aba => {
+        if (!aba.requer) return
+        const escondida = config[aba.requer] === false
+        document.querySelectorAll(`.acesso-rapido-item[data-aba="${aba.id}"]`)
+            .forEach(el => el.classList.toggle("oculto-modo", escondida))
+    })
+}
+
+aplicarModoAcessoRapido()
+
+function irParaAba(aba) {
+    document.querySelectorAll("[data-aba]").forEach(b => b.classList.toggle("ativa", b.dataset.aba === aba && (b.classList.contains("nav-item"))))
+    document.querySelectorAll(".painel-secao").forEach(s => s.classList.remove("ativa"))
+    document.getElementById("secao-" + aba).classList.add("ativa")
+
+    if (aba === "dashboard") {
+        carregarDashboard()
+    }
+    if (aba === "garcom") {
+        carregarModoGarcom()
+        document.getElementById("bolinha-garcom")?.classList.remove("visivel")
+    }
+    if (aba === "mesas") {
+        carregarMesas()
+        document.getElementById("bolinha-mesas")?.classList.remove("visivel")
+    }
+    if (aba === "historico-mesa") {
+        carregarHistoricoMesa()
+    }
+    if (aba === "historico-delivery") {
+        carregarHistoricoDelivery()
+        document.getElementById("bolinha-historico-delivery")?.classList.remove("visivel")
+    }
+
+    fecharMenuLateral()
+}
+
+const menuLateral = document.getElementById("menu-lateral")
+const overlayMenu = document.getElementById("overlay-menu")
+
+function abrirMenuLateral() {
+    menuLateral.classList.add("aberto")
+    overlayMenu.classList.add("aberto")
+}
+
+function fecharMenuLateral() {
+    menuLateral.classList.remove("aberto")
+    overlayMenu.classList.remove("aberto")
+}
+
+document.getElementById("btn-menu").addEventListener("click", abrirMenuLateral)
+overlayMenu.addEventListener("click", fecharMenuLateral)
 
 // ============================================================
 // ABA "DADOS DA LOJA"
@@ -1968,6 +2083,9 @@ async function carregarDashboard() {
         document.getElementById("dash-vendas-hoje").textContent = vendasHoje.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
         document.getElementById("dash-pedidos-hoje").textContent = pedidosHoje.length
 
+        document.getElementById("inicio-vendas-hoje").textContent = vendasHoje.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+        document.getElementById("inicio-pedidos-hoje").textContent = pedidosHoje.length
+
         const contagem = {}
         pedidosHoje.forEach(p => {
             Object.values(p.itens || {}).forEach(info => {
@@ -2231,7 +2349,10 @@ async function copiarHistorico(id, tipo) {
 // TROCAR DE ABA ARRASTANDO NO CORPO DA PÁGINA (SWIPE)
 // ============================================================
 ;(function(){
-    const ordemAbas = ["garcom", "mesas", "historico-mesa", "historico-delivery", "produtos", "loja", "dashboard"]
+    const config = window.MODO_LOJA || {}
+    const ordemAbas = ["inicio", ...(window.ABAS_ADMIN || [])
+        .filter(a => !a.requer || config[a.requer] !== false)
+        .map(a => a.id)]
     let inicioX = 0, inicioY = 0, rastreando = false
     let paginaFicouEscondida = false
 
@@ -2265,7 +2386,7 @@ async function copiarHistorico(id, tipo) {
 
         if (Math.abs(deltaX) < 60 || Math.abs(deltaX) < Math.abs(deltaY)) return
 
-        const abaAtivaBtn = document.querySelector(".aba-btn.ativa")
+        const abaAtivaBtn = document.querySelector(".nav-item.ativa")
         if (!abaAtivaBtn) return
         const indiceAtual = ordemAbas.indexOf(abaAtivaBtn.dataset.aba)
         if (indiceAtual === -1) return
@@ -2273,8 +2394,7 @@ async function copiarHistorico(id, tipo) {
         const proximoIndice = deltaX < 0 ? indiceAtual + 1 : indiceAtual - 1
         if (proximoIndice < 0 || proximoIndice >= ordemAbas.length) return
 
-        const novoBtn = document.querySelector(`.aba-btn[data-aba="${ordemAbas[proximoIndice]}"]`)
-        if (novoBtn) novoBtn.click()
+        irParaAba(ordemAbas[proximoIndice])
     })
 })()
 
