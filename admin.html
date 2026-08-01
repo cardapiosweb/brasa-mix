@@ -77,6 +77,18 @@
     }
     .btn-topo-icone .bolinha-notif.visivel{display:block;}
 
+    /* Bolinha de aviso nos itens de nav/menu (Mesas, Garçom, Delivery) */
+    .nav-item .bolinha,
+    .menu-item .bolinha{
+        display:none;
+        width:8px;height:8px;border-radius:50%;
+        background:var(--tinta);
+        margin-left:2px;
+        vertical-align:top;
+    }
+    .nav-item .bolinha.visivel,
+    .menu-item .bolinha.visivel{display:inline-block;}
+
     /* ===== Menu suspenso (⋮) ===== */
     .menu-suspenso{
         position:fixed;top:0;right:0;height:100%;width:min(260px, 80vw);

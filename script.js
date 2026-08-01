@@ -264,6 +264,9 @@ const addressWarn = document.getElementById("address-warn")
 const addressSection = document.getElementById("address-section")
 const optEntrega = document.getElementById("opt-entrega")
 const optRetirada = document.getElementById("opt-retirada")
+const addMoreItemsBtn = document.getElementById("add-more-items-btn")
+
+addMoreItemsBtn.addEventListener("click", fecharModalCarrinho)
 
 document.getElementById("modal-qty-increase").addEventListener("click", () => {
     const seletor = document.getElementById("modal-qty-selector")
@@ -278,12 +281,14 @@ document.getElementById("modal-qty-increase").addEventListener("click", () => {
     const qtd = qtdAtual + 1
     seletor.setAttribute("data-qty", qtd)
     document.getElementById("modal-qty-value").textContent = qtd
+    atualizarBotaoAdicionarModal()
 })
 document.getElementById("modal-qty-decrease").addEventListener("click", () => {
     const seletor = document.getElementById("modal-qty-selector")
     const qtd = Math.max(1, parseInt(seletor.getAttribute("data-qty"), 10) - 1)
     seletor.setAttribute("data-qty", qtd)
     document.getElementById("modal-qty-value").textContent = qtd
+    atualizarBotaoAdicionarModal()
 })
 
 // ===========================
@@ -321,6 +326,7 @@ function aplicarModoMesa() {
     document.getElementById("payment-section")?.classList.add("oculto-modo")
 
     tipoEntrega = "mesa"
+    atualizarLinhaTaxa()
 }
 
 // ===========================
@@ -395,16 +401,98 @@ function selecionarEntrega(tipo) {
     if (tipo === "entrega") {
         optEntrega.classList.add("selected")
         optRetirada.classList.remove("selected")
-        addressSection.style.display = "block"
     } else {
         optRetirada.classList.add("selected")
         optEntrega.classList.remove("selected")
-        addressSection.style.display = "none"
         addressWarn.classList.add("hidden")
         addressRua.classList.remove("border-red-500")
         addressBairro.classList.remove("border-red-500")
     }
+
+    atualizarLinhaTaxa()
+    atualizarCartaoEndereco()
 }
+
+// A linha "Taxa de entrega" no resumo só faz sentido no modo entrega —
+// some na retirada e no modo mesa.
+function atualizarLinhaTaxa() {
+    const linha = document.getElementById("resumo-taxa-linha")
+    if (!linha) return
+    linha.style.display = (tipoEntrega === "entrega") ? "" : "none"
+}
+
+// ===========================
+// CARTÃO DE ENDEREÇO + MODAL DE EDIÇÃO
+// ===========================
+const enderecoCard = document.getElementById("endereco-card")
+const enderecoCardIcone = document.getElementById("endereco-card-icone")
+const enderecoCardLabel = document.getElementById("endereco-card-label")
+const enderecoCardValor = document.getElementById("endereco-card-valor")
+const enderecoCardSeta = document.getElementById("endereco-card-seta")
+const addressModal = document.getElementById("address-modal")
+
+function atualizarCartaoEndereco() {
+    if (tipoEntrega === "retirada") {
+        enderecoCard.classList.add("modo-retirada", "somente-info")
+        enderecoCardIcone.innerHTML = `<i class="fa fa-store"></i>`
+        enderecoCardLabel.textContent = "RETIRAR NA LOJA"
+        enderecoCardValor.textContent = loja.endereco || "Endereço não informado"
+        enderecoCardSeta.style.display = "none"
+        return
+    }
+
+    enderecoCard.classList.remove("modo-retirada", "somente-info")
+    enderecoCardIcone.innerHTML = `<i class="fa fa-location-dot"></i>`
+    enderecoCardLabel.textContent = "ENTREGAR EM"
+    enderecoCardSeta.style.display = ""
+
+    const rua = addressRua.value.trim()
+    const bairro = addressBairro.value.trim()
+    if (rua || bairro) {
+        const numero = addressNumero.value.trim()
+        enderecoCardValor.textContent = `${rua}${numero ? ", " + numero : ""}${bairro ? " - " + bairro : ""}`
+    } else {
+        enderecoCardValor.textContent = "Toque para informar o endereço"
+    }
+}
+
+enderecoCard.addEventListener("click", () => {
+    if (tipoEntrega === "retirada") return
+    abrirModalEndereco()
+})
+
+function abrirModalEndereco() {
+    addressModal.classList.add("open")
+    document.body.style.overflow = "hidden"
+    history.pushState({ enderecoModalAberto: true }, "")
+}
+
+function fecharModalEndereco() {
+    addressModal.classList.remove("open")
+    document.body.style.overflow = ""
+    if (history.state && history.state.enderecoModalAberto) {
+        ignorarProximoPopstate = true
+        history.back()
+    }
+}
+
+function fecharModalEnderecoSeOverlay(event) {
+    if (event.target === addressModal) fecharModalEndereco()
+}
+
+document.getElementById("address-close-btn").addEventListener("click", fecharModalEndereco)
+
+document.getElementById("address-salvar-btn").addEventListener("click", () => {
+    if (addressRua.value.trim() === "" || addressBairro.value.trim() === "") {
+        addressWarn.classList.remove("hidden")
+        if (addressRua.value.trim() === "") addressRua.classList.add("border-red-500")
+        if (addressBairro.value.trim() === "") addressBairro.classList.add("border-red-500")
+        ;(addressRua.value.trim() === "" ? addressRua : addressBairro).focus()
+        return
+    }
+    atualizarCartaoEndereco()
+    fecharModalEndereco()
+})
 
 
 // ===========================
@@ -579,8 +667,12 @@ document.getElementById("menu").addEventListener("click", function (event) {
 
         const produtoCompleto = produtos.find(p => String(p.id) === id)
 
-        if (produtoCompleto && produtoCompleto.opcoes) {
-            abrirModalOpcoes(produtoCompleto, qtd)
+        // Produtos com opções não têm mais um modal próprio — as opções
+        // ficam dentro do modal de produto. Então clicar no botão do
+        // carrinho direto na lista, pra esses produtos, só abre o modal
+        // (onde o cliente escolhe as opções e confirma por lá).
+        if (produtoCompleto && produtoCompleto.opcoes && produtoCompleto.opcoes.length) {
+            abrirProduto(produtoCompleto)
         } else {
             addToCart(id, name, price, parentButton, qtd)
         }
@@ -592,7 +684,7 @@ document.getElementById("menu").addEventListener("click", function (event) {
     }
 })
 
-function addToCart(id, name, price, btnElement, quantity = 1, opcoesSelecionadas = null) {
+function addToCart(id, name, price, btnElement, quantity = 1, opcoesSelecionadas = null, observacao = "") {
     const disponivel = estoqueDisponivel(id)
     if (quantity > disponivel) {
         avisarEstoqueInsuficiente(disponivel)
@@ -600,21 +692,28 @@ function addToCart(id, name, price, btnElement, quantity = 1, opcoesSelecionadas
     }
 
     const precoAdicional = opcoesSelecionadas
-        ? opcoesSelecionadas.reduce((soma, item) => soma + item.preco_adicional, 0)
+        ? opcoesSelecionadas.reduce((soma, item) => soma + item.preco_adicional * (item.quantidade || 1), 0)
         : 0
     const precoFinal = price + precoAdicional
 
-    // Itens com opções diferentes viram linhas separadas no carrinho
-    const chave = opcoesSelecionadas
-        ? `${id}__${opcoesSelecionadas.map(o => o.nome).sort().join(",")}`
-        : id
+    // Itens com opções (incluindo quantidade de cada uma) ou observação
+    // diferentes viram linhas separadas no carrinho.
+    const partesChave = []
+    if (opcoesSelecionadas && opcoesSelecionadas.length) {
+        partesChave.push(opcoesSelecionadas.map(o => `${o.nome}:${o.quantidade || 1}`).sort().join(","))
+    }
+    if (observacao) partesChave.push(`obs:${observacao}`)
+    const chave = partesChave.length ? `${id}__${partesChave.join("|")}` : id
+
+    const produtoRef = produtos.find(p => String(p.id) === String(id))
+    const foto = produtoRef && produtoRef.fotos ? produtoRef.fotos[0] : ""
 
     const existingItem = cart.find(item => item.chave === chave)
 
     if (existingItem) {
         existingItem.quantity += quantity
     } else {
-        cart.push({ id, chave, name, price: precoFinal, quantity, opcoes: opcoesSelecionadas })
+        cart.push({ id, chave, name, price: precoFinal, quantity, opcoes: opcoesSelecionadas, foto, observacao })
     }
 
     updateCartModal()
@@ -657,34 +756,46 @@ function updateCartModal() {
             </div>
         `
         cartTotal.textContent = "R$ 0,00"
+        document.getElementById("resumo-subtotal").textContent = "R$ 0,00"
         cartCounter.textContent = "0"
+        addMoreItemsBtn.style.display = "none"
         return
     }
 
+    addMoreItemsBtn.style.display = "flex"
+
     cart.forEach(item => {
         const cartItemElement = document.createElement("div")
-        cartItemElement.classList.add("flex", "justify-between", "items-center", "mb-4", "pb-3", "border-b")
+        cartItemElement.className = "cart-item-card"
 
         const opcoesTexto = item.opcoes && item.opcoes.length
-            ? `<p class="text-xs text-gray-500">${agruparOpcoesPorGrupo(item.opcoes).join(" · ")}</p>`
+            ? `<p class="text-xs text-gray-500 mb-1">${agruparOpcoesPorGrupo(item.opcoes).join(" · ")}</p>`
+            : ""
+        const obsTexto = item.observacao
+            ? `<p class="text-xs italic text-gray-500 mb-1">Obs: ${escaparHtml(item.observacao)}</p>`
             : ""
 
         cartItemElement.innerHTML = `
-            <div class="flex-1">
-                <p class="font-bold text-sm">${item.name}</p>
+            <img src="${item.foto || ''}" alt="" onerror="imagemFallbackProduto(this, '56x56')" />
+            <div class="flex-1 min-w-0">
+                <div class="flex items-start justify-between gap-2">
+                    <p class="font-bold text-sm">${item.name}</p>
+                    <button class="remove-from-cart-btn cart-item-remove" data-chave="${item.chave}" title="Remover">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                </div>
                 ${opcoesTexto}
-                <p class="text-xs text-gray-500">R$ ${item.price.toFixed(2).replace(".", ",")} cada</p>
-            </div>
-            <div class="flex items-center gap-2 mx-3">
-                <button class="decrease-btn w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100" data-chave="${item.chave}">−</button>
-                <span class="font-bold w-5 text-center">${item.quantity}</span>
-                <button class="increase-btn w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100" data-chave="${item.chave}">+</button>
-            </div>
-            <div class="text-right min-w-[70px]">
-                <p class="font-bold text-sm" style="color: var(--laranja);">
-                    R$ ${(item.price * item.quantity).toFixed(2).replace(".", ",")}
-                </p>
-                <button class="remove-from-cart-btn text-xs text-red-400 hover:text-red-600 mt-1" data-chave="${item.chave}">Remover</button>
+                ${obsTexto}
+                <div class="flex items-center justify-between mt-1">
+                    <div class="flex items-center gap-2">
+                        <button class="decrease-btn w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100" data-chave="${item.chave}">−</button>
+                        <span class="font-bold w-5 text-center">${item.quantity}</span>
+                        <button class="increase-btn w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100" data-chave="${item.chave}">+</button>
+                    </div>
+                    <p class="font-bold text-sm" style="color: var(--laranja);">
+                        R$ ${(item.price * item.quantity).toFixed(2).replace(".", ",")}
+                    </p>
+                </div>
             </div>
         `
 
@@ -692,7 +803,9 @@ function updateCartModal() {
         cartItemsContainer.appendChild(cartItemElement)
     })
 
-    cartTotal.textContent = total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+    const totalFormatado = total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+    cartTotal.textContent = totalFormatado
+    document.getElementById("resumo-subtotal").textContent = totalFormatado
 
     const totalItens = cart.reduce((sum, item) => sum + item.quantity, 0)
     cartCounter.textContent = totalItens
@@ -703,11 +816,13 @@ function updateCartModal() {
 // CONTROLES DE QUANTIDADE E REMOÇÃO
 // ===========================
 cartItemsContainer.addEventListener("click", function (event) {
-    const chave = event.target.getAttribute("data-chave")
+    const removeBtn = event.target.closest(".remove-from-cart-btn")
+    const increaseBtn = event.target.closest(".increase-btn")
+    const decreaseBtn = event.target.closest(".decrease-btn")
 
-    if (event.target.classList.contains("remove-from-cart-btn")) removeItemCart(chave)
-    if (event.target.classList.contains("increase-btn")) increaseItem(chave)
-    if (event.target.classList.contains("decrease-btn")) decreaseItem(chave)
+    if (removeBtn) removeItemCart(removeBtn.getAttribute("data-chave"))
+    if (increaseBtn) increaseItem(increaseBtn.getAttribute("data-chave"))
+    if (decreaseBtn) decreaseItem(decreaseBtn.getAttribute("data-chave"))
 })
 
 function increaseItem(chave) {
@@ -928,10 +1043,11 @@ checkoutBtn.addEventListener("click", async function () {
             const linhaOpcoes = item.opcoes && item.opcoes.length
                 ? "\n  " + agruparOpcoesPorGrupo(item.opcoes).join("\n  ")
                 : ""
+            const linhaObs = item.observacao ? `\n  Obs: ${item.observacao}` : ""
             const produtoRef = produtos.find(p => String(p.id) === String(item.id))
             const esconderQtd = produtoRef && produtoRef.esconder_setas && item.quantity === 1
             const linhaQtd = esconderQtd ? "" : `Qtd: ${item.quantity} | `
-            return `- ${item.name}${linhaOpcoes}\n  ${linhaQtd}R$ ${(item.price * item.quantity).toFixed(2).replace(".", ",")}`
+            return `- ${item.name}${linhaOpcoes}${linhaObs}\n  ${linhaQtd}R$ ${(item.price * item.quantity).toFixed(2).replace(".", ",")}`
         }).join("\n")
 
         const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
@@ -1090,6 +1206,8 @@ function abrirProduto(produto) {
     produtoAtual = produto
     fotosAtual = produto.fotos
 
+    document.getElementById("modal-observacao").value = ""
+
     document.getElementById("modal-qty-selector").setAttribute("data-qty", "1")
     document.getElementById("modal-qty-value").textContent = "1"
     document.getElementById("modal-qty-selector").style.display = produto.esconder_setas ? "none" : "flex"
@@ -1121,6 +1239,8 @@ function abrirProduto(produto) {
     const esconderPrecoModal = produto.esconder_setas && produto.preco === 0
     document.getElementById("modal-price").textContent = esconderPrecoModal ? "" : "R$ " + produto.preco.toFixed(2).replace(".", ",")
 
+    renderizarOpcoesProduto(produto)
+
     const modalAddBtn = document.getElementById("modal-add-btn")
     if (produto.esgotado) {
         modalAddBtn.classList.add("esgotado-btn")
@@ -1136,17 +1256,29 @@ function abrirProduto(produto) {
         }
     } else {
         modalAddBtn.classList.remove("esgotado-btn")
-        modalAddBtn.innerHTML = `<i class="fa fa-cart-plus"></i> Adicionar`
+        atualizarBotaoAdicionarModal()
         modalAddBtn.onclick = function () {
             const qtd = parseInt(document.getElementById("modal-qty-selector").getAttribute("data-qty"), 10)
-            if (produto.opcoes) {
-                document.getElementById("product-modal").classList.remove("open")
-                document.body.style.overflow = "hidden"
-                abrirModalOpcoes(produto, qtd)
+            const observacao = document.getElementById("modal-observacao").value.trim()
+
+            if (produto.opcoes && produto.opcoes.length) {
+                if (!gruposObrigatoriosCompletos(produto)) {
+                    Toastify({
+                        text: "Escolha as opções obrigatórias antes de continuar.",
+                        duration: 2000,
+                        gravity: "top",
+                        position: "right",
+                        style: { background: "#ef4444", borderRadius: "8px" },
+                    }).showToast()
+                    return
+                }
+                const todasOpcoes = Object.values(opcoesEscolhidas).flat()
+                addToCart(produtoAtual.id, produtoAtual.nome, produtoAtual.preco, null, qtd, todasOpcoes, observacao)
             } else {
-                addToCart(produtoAtual.id, produtoAtual.nome, produtoAtual.preco, null, qtd)
-                fecharModalProduto()
+                addToCart(produtoAtual.id, produtoAtual.nome, produtoAtual.preco, null, qtd, null, observacao)
             }
+
+            fecharModalProduto()
         }
     }
 
@@ -1191,6 +1323,7 @@ function fecharModalProduto() {
     // Se tinha uma marcação empilhada pro modal, remove ela do histórico
     // (assim o botão de voltar não fica "gastando" um clique à toa depois)
     if (history.state && history.state.produtoModalAberto) {
+        ignorarProximoPopstate = true
         history.back()
     }
 }
@@ -1202,25 +1335,31 @@ function fecharModalProdutoSeOverlay(event) {
 }
 
 // ===========================
-// MODAL DE OPÇÕES (sabores, adicionais etc.)
-// Só é usado quando produto.opcoes existe.
+// OPÇÕES DO PRODUTO (sabores, adicionais etc.)
+// Renderizadas dentro do próprio modal de produto. Grupos com max === 1
+// continuam seleção única; grupos com max > 1 ganham stepper (permitem
+// repetir, ex: "2x Queijo cheddar"). Só aparece quando produto.opcoes existe.
 // ===========================
 let opcoesEscolhidas = {}
-let produtoOpcoesAtual = null
-let quantidadeOpcoesAtual = 1
 
-function abrirModalOpcoes(produto, quantidade) {
-    produtoOpcoesAtual = produto
-    quantidadeOpcoesAtual = quantidade
+function renderizarOpcoesProduto(produto) {
+    const editor = document.getElementById("modal-options-editor")
+    const container = document.getElementById("modal-options-grupos")
     opcoesEscolhidas = {}
 
-    document.getElementById("options-nome").textContent = produto.nome
+    if (!produto.opcoes || !produto.opcoes.length) {
+        editor.style.display = "none"
+        container.innerHTML = ""
+        return
+    }
 
-    const container = document.getElementById("options-grupos")
+    editor.style.display = "block"
     container.innerHTML = ""
 
-    produto.opcoes.forEach(grupo => {
+    produto.opcoes.forEach((grupo, indice) => {
         opcoesEscolhidas[grupo.nome] = []
+
+        const permiteRepetir = grupo.max > 1
 
         const textoLimite = grupo.obrigatorio
             ? `Mín: ${grupo.min} · Máx: ${grupo.max}`
@@ -1230,46 +1369,76 @@ function abrirModalOpcoes(produto, quantidade) {
         grupoDiv.className = "options-grupo"
         grupoDiv.innerHTML = `
             <p class="options-grupo-titulo">
-                <span>${grupo.nome}${grupo.obrigatorio ? " *" : ""}</span>
-                <span class="options-grupo-limite">${textoLimite}</span>
+                <span>${escaparHtml(grupo.nome)}${grupo.obrigatorio ? " *" : ""}</span>
+                <span class="options-grupo-limite">
+                    ${textoLimite}${permiteRepetir ? " · pode repetir" : ""}
+                    ${grupo.obrigatorio ? `<span class="grupo-ok-badge" id="grupo-ok-${indice}">OK</span>` : ""}
+                </span>
             </p>
         `
 
         grupo.itens.forEach(item => {
             const itemDiv = document.createElement("div")
             itemDiv.className = "options-item"
-            itemDiv.innerHTML = `
-                <span>${item.nome}</span>
-                ${item.preco_adicional > 0 ? `<span class="options-item-preco">+R$ ${item.preco_adicional.toFixed(2).replace(".", ",")}</span>` : ""}
-            `
-            itemDiv.addEventListener("click", () => alternarOpcao(grupo, item, itemDiv))
+            const precoHtml = item.preco_adicional > 0
+                ? `<span class="options-item-preco">+R$ ${item.preco_adicional.toFixed(2).replace(".", ",")}</span>`
+                : ""
+
+            if (!permiteRepetir) {
+                itemDiv.innerHTML = `<span>${escaparHtml(item.nome)}</span>${precoHtml}`
+                itemDiv.addEventListener("click", () => alternarOpcaoUnica(grupo, item, itemDiv))
+            } else {
+                itemDiv.innerHTML = `
+                    <span>${escaparHtml(item.nome)}</span>
+                    <div class="options-item-direita">
+                        ${precoHtml}
+                        <button type="button" class="qty-btn options-item-minus" style="display:none;">−</button>
+                        <span class="qty-value options-item-qtd" style="display:none;">0</span>
+                        <button type="button" class="qty-btn options-item-plus">+</button>
+                    </div>
+                `
+                itemDiv.querySelector(".options-item-plus").addEventListener("click", (e) => {
+                    e.stopPropagation()
+                    alterarQuantidadeOpcao(grupo, item, itemDiv, 1)
+                })
+                itemDiv.querySelector(".options-item-minus").addEventListener("click", (e) => {
+                    e.stopPropagation()
+                    alterarQuantidadeOpcao(grupo, item, itemDiv, -1)
+                })
+            }
+
             grupoDiv.appendChild(itemDiv)
         })
 
         container.appendChild(grupoDiv)
     })
 
-    atualizarTotalOpcoes()
-
-    document.getElementById("options-modal").classList.add("open")
-    document.body.style.overflow = "hidden"
-    history.pushState({ opcoesModalAberto: true }, "")
+    atualizarBotaoAdicionarModal()
 }
 
-function alternarOpcao(grupo, item, itemDiv) {
+function alternarOpcaoUnica(grupo, item, itemDiv) {
     const selecionadosGrupo = opcoesEscolhidas[grupo.nome]
     const jaSelecionado = selecionadosGrupo.some(i => i.nome === item.nome)
 
     if (jaSelecionado) {
-        opcoesEscolhidas[grupo.nome] = selecionadosGrupo.filter(i => i.nome !== item.nome)
+        opcoesEscolhidas[grupo.nome] = []
         itemDiv.classList.remove("selecionado")
-    } else if (grupo.max === 1) {
-        // Seleção única: desmarca o anterior do mesmo grupo
-        opcoesEscolhidas[grupo.nome] = [{ ...item, grupo: grupo.nome }]
+    } else {
+        opcoesEscolhidas[grupo.nome] = [{ ...item, grupo: grupo.nome, quantidade: 1 }]
         itemDiv.parentElement.querySelectorAll(".options-item").forEach(el => el.classList.remove("selecionado"))
         itemDiv.classList.add("selecionado")
-    } else {
-        if (selecionadosGrupo.length >= grupo.max) {
+    }
+
+    atualizarBotaoAdicionarModal()
+}
+
+function alterarQuantidadeOpcao(grupo, item, itemDiv, delta) {
+    const lista = opcoesEscolhidas[grupo.nome]
+    let entrada = lista.find(i => i.nome === item.nome)
+    const totalGrupo = lista.reduce((soma, i) => soma + i.quantidade, 0)
+
+    if (delta > 0) {
+        if (totalGrupo >= grupo.max) {
             Toastify({
                 text: `Você pode escolher até ${grupo.max} opções em "${grupo.nome}".`,
                 duration: 2000,
@@ -1279,11 +1448,27 @@ function alternarOpcao(grupo, item, itemDiv) {
             }).showToast()
             return
         }
-        opcoesEscolhidas[grupo.nome].push({ ...item, grupo: grupo.nome })
-        itemDiv.classList.add("selecionado")
+        if (entrada) {
+            entrada.quantidade += 1
+        } else {
+            entrada = { ...item, grupo: grupo.nome, quantidade: 1 }
+            lista.push(entrada)
+        }
+    } else if (entrada) {
+        entrada.quantidade -= 1
+        if (entrada.quantidade <= 0) {
+            opcoesEscolhidas[grupo.nome] = lista.filter(i => i.nome !== item.nome)
+        }
     }
 
-    atualizarTotalOpcoes()
+    const quantidadeAtual = entrada ? Math.max(entrada.quantidade, 0) : 0
+    itemDiv.classList.toggle("selecionado", quantidadeAtual > 0)
+    itemDiv.querySelector(".options-item-minus").style.display = quantidadeAtual > 0 ? "flex" : "none"
+    const spanQtd = itemDiv.querySelector(".options-item-qtd")
+    spanQtd.style.display = quantidadeAtual > 0 ? "inline-block" : "none"
+    spanQtd.textContent = quantidadeAtual
+
+    atualizarBotaoAdicionarModal()
 }
 
 function agruparOpcoesPorGrupo(opcoes) {
@@ -1292,71 +1477,65 @@ function agruparOpcoesPorGrupo(opcoes) {
     opcoes.forEach(o => {
         const g = o.grupo || "Opções"
         if (!porGrupo[g]) { porGrupo[g] = []; ordemGrupos.push(g) }
-        porGrupo[g].push(o.nome)
+        const qtd = o.quantidade || 1
+        porGrupo[g].push(qtd > 1 ? `${qtd}x ${o.nome}` : o.nome)
     })
     return ordemGrupos.map(g => `${g}: ${porGrupo[g].join(", ")}`)
 }
 
-function atualizarTotalOpcoes() {
-    let totalAdicional = 0
-    Object.values(opcoesEscolhidas).forEach(itens => {
-        itens.forEach(item => { totalAdicional += item.preco_adicional })
-    })
+function atualizarBotaoAdicionarModal() {
+    if (!produtoAtual || produtoAtual.esgotado) return
 
-    const precoUnitario = produtoOpcoesAtual.preco + totalAdicional
-    const totalFinal = precoUnitario * quantidadeOpcoesAtual
+    const modalAddBtn = document.getElementById("modal-add-btn")
+    const qtd = parseInt(document.getElementById("modal-qty-selector").getAttribute("data-qty"), 10)
 
-    document.getElementById("options-total").textContent =
-        totalFinal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
-}
-
-function gruposObrigatoriosCompletos() {
-    return produtoOpcoesAtual.opcoes.every(grupo => {
-        if (!grupo.obrigatorio) return true
-        return opcoesEscolhidas[grupo.nome].length >= grupo.min
-    })
-}
-
-function fecharModalOpcoes() {
-    document.getElementById("options-modal").classList.remove("open")
-    document.body.style.overflow = ""
-    if (history.state && history.state.opcoesModalAberto) {
-        history.back()
-    }
-}
-
-function fecharModalOpcoesSeOverlay(event) {
-    if (event.target === document.getElementById("options-modal")) {
-        fecharModalOpcoes()
-    }
-}
-
-document.getElementById("options-close-btn").addEventListener("click", fecharModalOpcoes)
-
-document.getElementById("options-confirm-btn").addEventListener("click", () => {
-    if (!gruposObrigatoriosCompletos()) {
-        Toastify({
-            text: "Escolha as opções obrigatórias antes de continuar.",
-            duration: 2000,
-            gravity: "top",
-            position: "right",
-            style: { background: "#ef4444", borderRadius: "8px" },
-        }).showToast()
+    if (!produtoAtual.opcoes || !produtoAtual.opcoes.length) {
+        modalAddBtn.innerHTML = `<i class="fa fa-cart-plus"></i> Adicionar`
         return
     }
 
-    const todasOpcoes = Object.values(opcoesEscolhidas).flat()
-    addToCart(produtoOpcoesAtual.id, produtoOpcoesAtual.nome, produtoOpcoesAtual.preco, null, quantidadeOpcoesAtual, todasOpcoes)
-    fecharModalOpcoes()
-})
+    let totalAdicional = 0
+    produtoAtual.opcoes.forEach((grupo, indice) => {
+        const itens = opcoesEscolhidas[grupo.nome] || []
+        itens.forEach(item => { totalAdicional += item.preco_adicional * (item.quantidade || 1) })
+
+        if (grupo.obrigatorio) {
+            const totalNoGrupo = itens.reduce((soma, i) => soma + i.quantidade, 0)
+            const badge = document.getElementById(`grupo-ok-${indice}`)
+            if (badge) badge.style.display = totalNoGrupo >= grupo.min ? "inline-flex" : "none"
+        }
+    })
+
+    const totalFinal = (produtoAtual.preco + totalAdicional) * qtd
+    const totalFormatado = totalFinal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+    modalAddBtn.innerHTML = `<i class="fa fa-cart-plus"></i> Adicionar - ${totalFormatado}`
+}
+
+function gruposObrigatoriosCompletos(produto) {
+    return produto.opcoes.every(grupo => {
+        if (!grupo.obrigatorio) return true
+        const totalNoGrupo = opcoesEscolhidas[grupo.nome].reduce((s, i) => s + i.quantidade, 0)
+        return totalNoGrupo >= grupo.min
+    })
+}
+
+// Trava usada quando um modal é fechado por um CLIQUE (botão "Voltar",
+// "Salvar" etc.) em vez do gesto/botão de voltar do navegador — evita
+// que salvar o endereço, por exemplo, feche o carrinho junto.
+let ignorarProximoPopstate = false
 
 window.addEventListener("popstate", () => {
-    const modalOpcoes = document.getElementById("options-modal")
+    if (ignorarProximoPopstate) {
+        ignorarProximoPopstate = false
+        return
+    }
+
+    const modalEndereco = document.getElementById("address-modal")
     const modalProduto = document.getElementById("product-modal")
     const modalCarrinho = document.getElementById("cart-modal")
 
-    if (modalOpcoes.classList.contains("open")) {
-        fecharModalOpcoes()
+    if (modalEndereco.classList.contains("open")) {
+        fecharModalEndereco()
     } else if (modalProduto.classList.contains("open")) {
         fecharModalProduto()
     } else if (modalCarrinho.style.display === "flex") {
