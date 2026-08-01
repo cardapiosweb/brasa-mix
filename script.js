@@ -1207,6 +1207,7 @@ function abrirProduto(produto) {
     fotosAtual = produto.fotos
 
     document.getElementById("modal-observacao").value = ""
+    document.getElementById("modal-observacao-wrap").style.display = produto.esconder_observacao ? "none" : "block"
 
     document.getElementById("modal-qty-selector").setAttribute("data-qty", "1")
     document.getElementById("modal-qty-value").textContent = "1"

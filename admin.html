@@ -678,6 +678,7 @@
             <label><input type="checkbox" id="prod-esgotado" /> Esgotado</label>
             <label><input type="checkbox" id="prod-retirada-apenas" /> Só retirada</label>
             <label><input type="checkbox" id="prod-esconder-setas" /> Esconder setas de quantidade</label>
+            <label><input type="checkbox" id="prod-esconder-observacao" /> Esconder campo de observação</label>
         </div>
 
         <div class="linha-check" style="margin-top:10px;">
@@ -1483,9 +1484,10 @@ function abrirModalProduto(produto) {
     document.getElementById("prod-oferta").checked = produto ? !!produto.oferta : false
     document.getElementById("prod-esgotado").checked = produto ? !!produto.esgotado : false
     document.getElementById("prod-retirada-apenas").checked = produto ? !!produto.retirada_apenas : false
-    document.getElementById("prod-esconder-setas").checked = produto ? !!produto.esconder_setas : false
+        document.getElementById("prod-esconder-setas").checked = produto ? !!produto.esconder_setas : false
+        document.getElementById("prod-esconder-observacao").checked = produto ? !!produto.esconder_observacao : false
 
-    opcoesProdutoAtual = (produto && produto.opcoes) ? JSON.parse(JSON.stringify(produto.opcoes)) : []
+        opcoesProdutoAtual = (produto && produto.opcoes) ? JSON.parse(JSON.stringify(produto.opcoes)) : []
     document.getElementById("prod-tem-opcoes").checked = opcoesProdutoAtual.length > 0
     document.getElementById("opcoes-editor").style.display = opcoesProdutoAtual.length > 0 ? "block" : "none"
     renderizarOpcoesEditor()
@@ -1534,6 +1536,7 @@ document.getElementById("btn-salvar-produto").addEventListener("click", async ()
         esgotado: document.getElementById("prod-esgotado").checked,
         retirada_apenas: document.getElementById("prod-retirada-apenas").checked,
         esconder_setas: document.getElementById("prod-esconder-setas").checked,
+        esconder_observacao: document.getElementById("prod-esconder-observacao").checked,
         opcoes: temOpcoes ? opcoesProdutoAtual : null
     }
     if (!id) registro.ordem = produtosAtuais.length
