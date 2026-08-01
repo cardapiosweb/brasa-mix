@@ -96,6 +96,7 @@ async function carregarDadosDaLoja() {
         estoque: p.estoque,
         retirada_apenas: p.retirada_apenas,
         esconder_setas: p.esconder_setas,
+        esconder_observacao: p.esconder_observacao,
         icone: p.icone || undefined,
         opcoes: p.opcoes || null
     }))
