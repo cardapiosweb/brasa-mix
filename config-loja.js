@@ -37,8 +37,8 @@ window.MODO_LOJA = MODO_LOJA
 const ABAS_ADMIN = [
     { id: "garcom",            label: "Garçom",         icone: "fa-bell-concierge", posicao: "nav",  requer: "usaMesa",     bolinha: "bolinha-garcom" },
     { id: "mesas",              label: "Mesas",          icone: "fa-chair",          posicao: "nav",  requer: "usaMesa",     bolinha: "bolinha-mesas" },
-    { id: "produtos",           label: "Produtos",       icone: "fa-utensils",       posicao: "nav",  requer: null },
     { id: "historico-delivery", label: "Delivery",       icone: "fa-motorcycle",     posicao: "nav",  requer: "usaDelivery", bolinha: "bolinha-historico-delivery" },
+    { id: "produtos",           label: "Produtos",       icone: "fa-utensils",       posicao: "nav",  requer: null },
     { id: "historico-mesa",     label: "Histórico Mesa", icone: "fa-receipt",        posicao: "menu", requer: "usaMesa" },
     { id: "dashboard",          label: "Dashboard",      icone: "fa-gauge",          posicao: "menu", requer: null },
     { id: "loja",               label: "Dados da loja",  icone: "fa-store",          posicao: "menu", requer: null },
