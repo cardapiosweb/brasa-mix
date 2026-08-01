@@ -40,8 +40,8 @@ const ABAS_ADMIN = [
     { id: "historico-delivery", label: "Delivery",       icone: "fa-motorcycle",     posicao: "nav",  requer: "usaDelivery", bolinha: "bolinha-historico-delivery" },
     { id: "produtos",           label: "Produtos",       icone: "fa-utensils",       posicao: "nav",  requer: null },
     { id: "historico-mesa",     label: "Histórico Mesa", icone: "fa-receipt",        posicao: "menu", requer: "usaMesa" },
-    { id: "dashboard",          label: "Dashboard",      icone: "fa-gauge",          posicao: "menu", requer: null },
     { id: "loja",               label: "Dados da loja",  icone: "fa-store",          posicao: "menu", requer: null },
+    { id: "dashboard",          label: "Dashboard",      icone: "fa-gauge",          posicao: "menu", requer: null },
 ]
 window.ABAS_ADMIN = ABAS_ADMIN
 
