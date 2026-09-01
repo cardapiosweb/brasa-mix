@@ -258,6 +258,22 @@
     }
     .categoria-header:first-child{margin-top:0;}
 
+    .horario-linha{
+        padding:12px 14px;border:1px solid var(--linha);border-radius:10px;margin-bottom:8px;background:white;
+    }
+    .horario-linha .horario-topo{margin-bottom:8px;}
+    .horario-linha label.dia-nome{font-weight:700;font-size:13.5px;display:flex;align-items:center;gap:8px;}
+    .horario-linha .horario-periodos{display:flex;flex-direction:column;gap:8px;}
+    .horario-linha.fechado .horario-periodos,
+    .horario-linha.fechado .horario-add-periodo{opacity:.4;pointer-events:none;}
+    .horario-periodo{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center;}
+    .horario-periodo input.horario-abre,
+    .horario-periodo input.horario-fecha{width:100%;padding:8px 10px;border:1.5px solid var(--linha);border-radius:8px;font-size:13px;text-align:center;font-weight:700;}
+    .horario-periodo .horario-remover-periodo{background:none;border:1.5px solid var(--linha);border-radius:8px;width:32px;height:32px;color:var(--erro);flex-shrink:0;}
+    .horario-periodo .horario-remover-periodo:hover{border-color:var(--erro);background:#FBEAE9;}
+    .horario-add-periodo{background:none;border:1.5px dashed var(--linha);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;color:#8a7361;width:100%;text-align:center;margin-top:8px;}
+    .horario-add-periodo:hover{border-color:var(--tinta);color:var(--tinta);background:var(--tinta-clara);}
+
     .categoria-linha{
     display:grid;
     grid-template-columns:auto 1fr 130px auto;
@@ -570,7 +586,6 @@
                     <div class="campo"><label>Frase de efeito (tagline)</label><input id="loja-tagline" /></div>
                     <div class="campo"><label>Endereço</label><input id="loja-endereco" /></div>
                     <div class="campo"><label>Título da seção do cardápio</label><input id="loja-titulo-menu" /></div>
-                    <div class="campo"><label>Texto do horário (exibido no site)</label><input id="loja-texto-horario" /></div>
                     <div class="campo">
                         <label>Chave Pix (deixe em branco pra não mostrar essa opção)</label>
                         <input id="loja-chave-pix" placeholder="Ex: 00.000.000/0000-00" />
@@ -619,6 +634,16 @@
                 </div>
                 <button class="btn-primario" id="btn-salvar-loja" style="width:auto;padding:10px 22px;">Salvar alterações</button>
                 <span id="salvando-loja">Salvo ✓</span>
+            </div>
+
+            <!-- ===== Horário de funcionamento ===== -->
+            <div class="card">
+                <h2>Horário de funcionamento</h2>
+                <p style="font-size:13px;color:#8a7361;margin:-8px 0 14px;">Esse horário decide se a loja aparece como "aberta"/"fechada" no site e também gera o texto exibido pro cliente — não precisa mais digitar o texto na mão.</p>
+                <div id="msg-horario"></div>
+                <div id="lista-horario"></div>
+                <button class="btn-primario" id="btn-salvar-horario" style="width:auto;padding:10px 22px;margin-top:14px;">Salvar horário</button>
+                <span id="salvando-horario" style="font-size:13px;color:var(--ok);margin-left:10px;display:none;">Salvo ✓</span>
             </div>
 
             <div class="card">
@@ -1079,6 +1104,8 @@ async function iniciarPainel(user) {
     document.getElementById("painel-nome-loja").textContent = lojaAtual.nome
     document.getElementById("inicio-titulo").textContent = `Olá, ${lojaAtual.nome}! 👋`
 
+    renderizarHorarioForm(lojaAtual.horario)
+
     preencherFormularioLoja()
     await carregarDashboard()
     await carregarProdutos()
@@ -1203,7 +1230,6 @@ function preencherFormularioLoja() {
     document.getElementById("loja-tagline").value = lojaAtual.tagline || ""
     document.getElementById("loja-endereco").value = lojaAtual.endereco || ""
     document.getElementById("loja-titulo-menu").value = lojaAtual.titulo_secao_menu || ""
-    document.getElementById("loja-texto-horario").value = lojaAtual.texto_horario || ""
     document.getElementById("loja-chave-pix").value = lojaAtual.chave_pix || ""
     document.getElementById("loja-logo").value = lojaAtual.logo_url || ""
     document.getElementById("loja-banner").value = lojaAtual.banner_url || ""
@@ -1234,7 +1260,6 @@ document.getElementById("btn-salvar-loja").addEventListener("click", async () =>
         tagline: document.getElementById("loja-tagline").value.trim(),
         endereco: document.getElementById("loja-endereco").value.trim(),
         titulo_secao_menu: document.getElementById("loja-titulo-menu").value.trim(),
-        texto_horario: document.getElementById("loja-texto-horario").value.trim(),
         chave_pix: document.getElementById("loja-chave-pix").value.trim(),
         logo_url: document.getElementById("loja-logo").value.trim(),
         banner_url: document.getElementById("loja-banner").value.trim(),
@@ -1340,6 +1365,133 @@ document.getElementById("btn-salvar-categorias").addEventListener("click", async
     renderizarListaProdutos()
 
     const selo = document.getElementById("salvando-categorias")
+    selo.style.display = "inline"
+    setTimeout(() => selo.style.display = "none", 2000)
+})
+
+// ============================================================
+// ABA "DADOS DA LOJA" — Horário de funcionamento
+// Editor digitável (type="time"): salva no mesmo campo "horario" que
+// checkStoreOpen() já usa pra decidir se a loja está aberta — e que
+// também gera o texto exibido no site (ver textoHorarioHoje em script.js).
+// ============================================================
+const DIAS_SEMANA = [
+    { chave: "segunda", label: "Segunda" },
+    { chave: "terca",   label: "Terça" },
+    { chave: "quarta",  label: "Quarta" },
+    { chave: "quinta",  label: "Quinta" },
+    { chave: "sexta",   label: "Sexta" },
+    { chave: "sabado",  label: "Sábado" },
+    { chave: "domingo", label: "Domingo" }
+]
+
+// Converte o valor salvo (pode ser hora cheia antiga, ex: 11, ou já no
+// formato novo "HH:MM") pro formato "HH:MM" que o input type="time" espera.
+function paraHoraMinutoTexto(valor, padrao) {
+    if (valor === null || valor === undefined || valor === "") return padrao
+    if (typeof valor === "number") return `${String(valor).padStart(2, "0")}:00`
+    return valor
+}
+
+function renderizarHorarioForm(horarioAtual) {
+    const lista = document.getElementById("lista-horario")
+    lista.innerHTML = ""
+    const horario = horarioAtual || {}
+
+    DIAS_SEMANA.forEach(dia => {
+        const bruto = horario[dia.chave]
+        // Agora suporta quantos períodos o dia tiver (ex: almoço e
+        // janta) — compatível com o formato antigo (objeto único),
+        // que vira automaticamente um array de 1 item.
+        const intervalos = Array.isArray(bruto) ? bruto : (bruto ? [bruto] : [])
+        const aberto = intervalos.length > 0
+
+        const linha = document.createElement("div")
+        linha.className = "horario-linha" + (aberto ? "" : " fechado")
+        linha.dataset.dia = dia.chave
+        linha.innerHTML = `
+            <div class="horario-topo">
+                <label class="dia-nome">
+                    <input type="checkbox" class="horario-aberto" ${aberto ? "checked" : ""} style="width:auto;" />
+                    ${dia.label}
+                </label>
+            </div>
+            <div class="horario-periodos"></div>
+            <button type="button" class="horario-add-periodo"><i class="fa fa-plus"></i> Adicionar horário (ex: almoço e janta)</button>
+        `
+
+        const periodosContainer = linha.querySelector(".horario-periodos")
+        const periodosIniciais = aberto ? intervalos : [{ abre: "11:00", fecha: "22:00" }]
+        periodosIniciais.forEach(intervalo => adicionarPeriodoHorario(periodosContainer, intervalo))
+
+        linha.querySelector(".horario-aberto").addEventListener("change", (e) => {
+            linha.classList.toggle("fechado", !e.target.checked)
+        })
+        linha.querySelector(".horario-add-periodo").addEventListener("click", () => {
+            adicionarPeriodoHorario(periodosContainer, { abre: "18:00", fecha: "23:00" })
+        })
+
+        lista.appendChild(linha)
+    })
+}
+
+// Cria uma linha de "abre/fecha" dentro do dia, com botão de remover —
+// usado tanto ao montar o formulário quanto ao clicar em "Adicionar horário".
+function adicionarPeriodoHorario(container, intervalo) {
+    const abre = paraHoraMinutoTexto(intervalo.abre, "11:00")
+    const fecha = paraHoraMinutoTexto(intervalo.fecha, "22:00")
+
+    const periodo = document.createElement("div")
+    periodo.className = "horario-periodo"
+    periodo.innerHTML = `
+        <input type="time" class="horario-abre" value="${abre}" />
+        <input type="time" class="horario-fecha" value="${fecha}" />
+        <button type="button" class="horario-remover-periodo" title="Remover este período"><i class="fa fa-xmark"></i></button>
+    `
+    periodo.querySelector(".horario-remover-periodo").addEventListener("click", () => {
+        // Nunca deixa o dia sem nenhum período visível — se for o
+        // único período, o "x" não faz nada (pra fechar o dia, o
+        // lojista desmarca o checkbox do dia mesmo).
+        if (container.children.length > 1) {
+            periodo.remove()
+        }
+    })
+    container.appendChild(periodo)
+}
+
+function coletarHorarioForm() {
+    const horario = {}
+    document.querySelectorAll("#lista-horario .horario-linha").forEach(linha => {
+        const dia = linha.dataset.dia
+        const aberto = linha.querySelector(".horario-aberto").checked
+        if (!aberto) { horario[dia] = null; return }
+
+        // Se o lojista deixar algum campo vazio, cai num horário padrão
+        // em vez de gravar um valor inválido no banco.
+        const periodos = [...linha.querySelectorAll(".horario-periodo")].map(periodo => ({
+            abre: periodo.querySelector(".horario-abre").value || "11:00",
+            fecha: periodo.querySelector(".horario-fecha").value || "22:00"
+        }))
+
+        horario[dia] = periodos.length ? periodos : [{ abre: "11:00", fecha: "22:00" }]
+    })
+    return horario
+}
+
+document.getElementById("btn-salvar-horario").addEventListener("click", async () => {
+    const msg = document.getElementById("msg-horario")
+    msg.innerHTML = ""
+
+    const horario = coletarHorarioForm()
+    const { error } = await sb.from("lojas").update({ horario }).eq("id", lojaAtual.id)
+
+    if (error) {
+        msg.innerHTML = `<div class="aviso aviso-erro">Não foi possível salvar: ${error.message}</div>`
+        return
+    }
+
+    lojaAtual.horario = horario
+    const selo = document.getElementById("salvando-horario")
     selo.style.display = "inline"
     setTimeout(() => selo.style.display = "none", 2000)
 })

@@ -922,6 +922,18 @@
         #date-span span {
             text-shadow: 0 1px 3px rgba(0,0,0,0.5);
         }
+        .status-loja-pill{
+            display:flex;align-items:center;gap:6px;
+            padding:5px 12px;border-radius:999px;font-size:13px;font-weight:700;
+            background:rgba(76,107,63,0.18);color:#8FD19E;border:1.5px solid rgba(143,209,158,0.5);
+        }
+        .status-loja-pill.fechada{
+            background:rgba(179,38,30,0.18);color:#F3A7A1;border-color:rgba(243,167,161,0.5);
+        }
+        .status-loja-bolinha{
+            width:7px;height:7px;border-radius:50%;background:#4ADE80;flex-shrink:0;
+        }
+        .status-loja-pill.fechada .status-loja-bolinha{background:#EF4444;}
 
         /* ===== Elementos escondidos via JS (modo mesa / retirada-apenas) ===== */
         .oculto-modo {
@@ -1026,8 +1038,15 @@
 
             <span class="endereco mt-3 w-[85%] text-center text-sm md:text-base block mx-auto" id="loja-endereco"></span>
 
-            <div class="px-4 py-1 rounded-lg mt-5" id="date-span">
-                <span class="text-white font-medium" id="loja-horario"></span>
+            <div class="mt-5 flex items-center justify-center gap-2 flex-wrap">
+                <div class="px-4 py-1 rounded-lg flex items-center gap-2" id="date-span">
+                    <i class="fa fa-clock" style="color: var(--dourado);font-size:13px;"></i>
+                    <span class="text-white font-medium" id="loja-horario"></span>
+                </div>
+                <div class="status-loja-pill" id="status-loja-pill">
+                    <span class="status-loja-bolinha"></span>
+                    <span id="status-loja-texto">Carregando...</span>
+                </div>
             </div>
 
         </div>

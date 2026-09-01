@@ -42,6 +42,44 @@ function escaparHtml(valor) {
 }
 
 // ===========================
+// HORÁRIO DE HOJE — texto exibido no site + verificação de aberto/fechado
+// Trabalha em minutos desde a meia-noite pra suportar tanto o formato
+// antigo (hora cheia, número) quanto o novo ("HH:MM", com minutos).
+// ===========================
+const DIAS_SEMANA_ORDEM = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"]
+
+function paraMinutos(valor, padraoMinutos) {
+    if (valor === null || valor === undefined || valor === "") return padraoMinutos
+    if (typeof valor === "number") return valor * 60
+    const partes = String(valor).split(":")
+    const h = parseInt(partes[0], 10)
+    const m = parseInt(partes[1], 10) || 0
+    if (isNaN(h)) return padraoMinutos
+    return h * 60 + m
+}
+
+function formatarHoraExibicao(valor) {
+    const totalMinutos = paraMinutos(valor, 0)
+    const h = Math.floor(totalMinutos / 60)
+    const m = totalMinutos % 60
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`
+}
+
+function textoHorarioHoje(horario) {
+    if (!horario) return ""
+    const diaDeHoje = DIAS_SEMANA_ORDEM[new Date().getDay()]
+
+    const bruto = horario[diaDeHoje]
+    const intervalos = Array.isArray(bruto) ? bruto : (bruto ? [bruto] : null)
+
+    if (!intervalos || !intervalos.length) return "Fechado hoje"
+
+    return intervalos
+        .map(i => `${formatarHoraExibicao(i.abre)} - ${formatarHoraExibicao(i.fecha)}`)
+        .join(" e ")
+}
+
+// ===========================
 // APLICAR DADOS DA LOJA NA PÁGINA
 // (lê o objeto `loja` de dados-loja.js)
 // ===========================
@@ -54,7 +92,9 @@ function aplicarDadosDaLoja() {
     document.getElementById("loja-nome").textContent = loja.nome
     document.getElementById("loja-tagline").textContent = loja.tagline
     document.getElementById("loja-endereco").textContent = `Endereço: ${loja.endereco}`
-    document.getElementById("loja-horario").textContent = loja.textoHorario
+    // Se a loja ainda não tiver o horário estruturado configurado,
+    // cai pro texto manual antigo — não quebra clientes já no ar.
+    document.getElementById("loja-horario").textContent = textoHorarioHoje(loja.horario) || loja.textoHorario
     document.getElementById("titulo-secao-menu").textContent = loja.tituloSecaoMenu
 
     document.getElementById("whats-flutuante").href = `https://wa.me/${loja.whatsapp}`
@@ -1176,7 +1216,7 @@ function checkStoreOpen() {
     const dias = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"]
     const agora = new Date()
     const diaDeHoje = dias[agora.getDay()]
-    const hora = agora.getHours()
+    const minutosAgora = agora.getHours() * 60 + agora.getMinutes()
     let intervalosHoje = loja.horario[diaDeHoje]
 
     if (!intervalosHoje) return false
@@ -1188,25 +1228,23 @@ function checkStoreOpen() {
     }
 
     return intervalosHoje.some(({ abre, fecha }) => {
-        if (abre === fecha) return false
-        if (fecha < abre) {
-            return hora >= abre || hora < fecha
+        const minutosAbre = paraMinutos(abre, 0)
+        const minutosFecha = paraMinutos(fecha, 0)
+        if (minutosAbre === minutosFecha) return false
+        if (minutosFecha < minutosAbre) {
+            return minutosAgora >= minutosAbre || minutosAgora < minutosFecha
         }
-        return hora >= abre && hora < fecha
+        return minutosAgora >= minutosAbre && minutosAgora < minutosFecha
     })
 }
 
 function aplicarStatusLoja() {
-    const spanItem = document.getElementById("date-span")
+    const pill = document.getElementById("status-loja-pill")
+    const texto = document.getElementById("status-loja-texto")
     const isOpen = checkStoreOpen()
 
-    if (isOpen) {
-        spanItem.classList.remove("bg-red-500")
-        spanItem.classList.add("bg-green-600")
-    } else {
-        spanItem.classList.remove("bg-green-600")
-        spanItem.classList.add("bg-red-500")
-    }
+    pill.classList.toggle("fechada", !isOpen)
+    texto.textContent = isOpen ? "Aberto agora" : "Fechado"
 }
 
 
