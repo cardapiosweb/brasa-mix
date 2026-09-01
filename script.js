@@ -986,12 +986,15 @@ checkoutBtn.addEventListener("click", async function () {
 
         checkoutBtn.disabled = true
 
+        // CORRIGIDO: já checava "error" certo — só faltava o
+        // "returning: minimal" pra não depender de uma policy de SELECT
+        // que o cliente anônimo não tem.
         const { error } = await supabaseClient.from("pedidos_mesa").insert({
             loja_id: loja.id,
             mesa: mesaAtual,
             itens: cart,
             total
-        })
+        }, { returning: "minimal" })
 
         if (error) {
             checkoutBtn.disabled = false
@@ -1105,15 +1108,22 @@ checkoutBtn.addEventListener("click", async function () {
         // Alimenta o relatório do dia (Dashboard). Tabela leve, se autolimpa
         // sozinha — não pode travar nada, o WhatsApp já foi enviado na linha
         // acima, isso é só um registro extra pro dono acompanhar o dia.
-        try {
-            await supabaseClient.from("relatorio_dia").insert({
+        // CORRIGIDO: o supabase-js não lança exceção em erro de RLS — ele
+        // resolve normalmente com { error } preenchido. O try/catch sozinho
+        // nunca pegava isso, então uma falha aqui (ex: 42501) passava batido,
+        // sem log nenhum e sem o lojista saber. Agora o "error" é checado de
+        // verdade, e o "returning: minimal" evita o RETURNING que dependeria
+        // de uma policy de SELECT que o cliente anônimo não tem.
+        const { error: erroRelatorio } = await supabaseClient
+            .from("relatorio_dia")
+            .insert({
                 loja_id: loja.id,
                 origem: tipoEntrega,   // 'entrega' ou 'retirada'
                 itens: itensSomados,
                 total
-            })
-        } catch (err) {
-            console.error("Erro ao registrar no relatório do dia", err)
+            }, { returning: "minimal" })
+        if (erroRelatorio) {
+            console.error("Erro ao registrar no relatório do dia", erroRelatorio)
         }
 
         // Grava no histórico de delivery (mesma lógica e limite do histórico
@@ -1121,17 +1131,21 @@ checkoutBtn.addEventListener("click", async function () {
         // origem = 'delivery' e mostrando só os 30 mais recentes). Guarda o
         // texto EXATO que foi enviado ao WhatsApp. Não bloqueia o fluxo se
         // falhar, o pedido já foi enviado.
-        try {
-            await supabaseClient.from("comandas_finalizadas").insert({
+        // CORRIGIDO: mesmo motivo do relatorio_dia acima — checa "error" de
+        // verdade (o try/catch nunca capturava isso) e evita o RETURNING
+        // com "returning: minimal".
+        const { error: erroComanda } = await supabaseClient
+            .from("comandas_finalizadas")
+            .insert({
                 loja_id: loja.id,
                 origem: "delivery",
                 mesa: null,
                 mensagem: message,
                 total,
                 itens: itensSomados
-            })
-        } catch (err) {
-            console.error("Erro ao salvar histórico de delivery", err)
+            }, { returning: "minimal" })
+        if (erroComanda) {
+            console.error("Erro ao salvar histórico de delivery", erroComanda)
         }
 
         // Baixa o estoque dos produtos comprados (delivery/retirada finaliza
