@@ -187,6 +187,18 @@ function renderizarProdutos() {
 
         menu.appendChild(grid)
 
+        // O estado inicial (aberta ou fechada) agora é escolhido pelo
+        // lojista por categoria, no admin ("Abrir automático" em Dados
+        // da loja > Categorias do cardápio). Sem marcar nada, a categoria
+        // já nasce fechada — o cliente sempre pode abrir/fechar clicando
+        // no título, independente desse estado inicial.
+        const abrirAutomatico = !!(categorias[categoria] && categorias[categoria].aberta_por_padrao)
+        if (!abrirAutomatico) {
+            grid.classList.add("categoria-fechada")
+            grid.style.maxHeight = "0px"
+            tituloWrapper.querySelector(".category-chevron").classList.add("chevron-fechado")
+        }
+
         // Clique no título esconde/mostra os produtos dessa categoria
         tituloWrapper.addEventListener("click", () => {
             const chevron = tituloWrapper.querySelector(".category-chevron")

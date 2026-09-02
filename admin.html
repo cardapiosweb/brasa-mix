@@ -192,7 +192,7 @@
         grid-template-columns:1fr auto;
         grid-template-areas:
             "nome nome"
-            "icone icone"
+            "icone auto"
             "setas apagar";
     }
         .item-opcao input.item-opcao-nome,
@@ -300,8 +300,8 @@
 
     .categoria-linha{
     display:grid;
-    grid-template-columns:auto 1fr 130px auto;
-    grid-template-areas:"setas nome icone apagar";
+    grid-template-columns:auto 1fr 130px auto auto;
+    grid-template-areas:"setas nome icone auto apagar";
     gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--linha);
     border-radius:10px;margin-bottom:8px;background:white;
     }
@@ -309,6 +309,11 @@
     .categoria-linha input:not(.campo-icone){grid-area:nome;}
     .categoria-linha input.campo-icone{grid-area:icone;}
     .categoria-linha .apagar{grid-area:apagar;}
+    .categoria-linha .categoria-auto{
+        grid-area:auto;display:flex;flex-direction:column;align-items:center;gap:2px;
+        font-size:10px;font-weight:700;color:#8a7361;text-align:center;white-space:nowrap;
+    }
+    .categoria-linha .categoria-auto input{width:auto;padding:0;}
     .categoria-linha input{width:100%;min-width:0;padding:8px 10px;border:1.5px solid var(--linha);border-radius:8px;font-size:13px;}
     .categoria-setas{display:flex;flex-direction:column;gap:2px;}
     .categoria-setas button{background:none;border:1px solid var(--linha);border-radius:5px;width:24px;height:20px;font-size:10px;color:var(--carvao);}
@@ -1354,6 +1359,10 @@ function renderizarCategorias() {
             </div>
             <input type="text" value="${escaparHtml(cat.nome || "")}" placeholder="Nome da categoria" oninput="categoriasAtuais[${i}].nome = this.value" />
             <input type="text" class="campo-icone" value="${escaparHtml(cat.icone || "")}" placeholder="fa-fire (ícone)" oninput="categoriasAtuais[${i}].icone = this.value" />
+            <label class="categoria-auto" title="Se marcado, essa categoria já aparece aberta quando o cliente entra no cardápio">
+                <input type="checkbox" ${cat.aberta_por_padrao ? "checked" : ""} onchange="categoriasAtuais[${i}].aberta_por_padrao = this.checked" />
+                Abrir<br>automático
+            </label>
             <button type="button" class="btn-icone apagar" title="Remover" onclick="removerCategoria(${i})"><i class="fa fa-trash"></i></button>
         `
         lista.appendChild(linha)
@@ -1399,7 +1408,7 @@ function removerCategoria(i) {
 }
 
 document.getElementById("btn-nova-categoria").addEventListener("click", () => {
-    categoriasAtuais.push({ nome: "", icone: "", ordem: categoriasAtuais.length })
+    categoriasAtuais.push({ nome: "", icone: "", ordem: categoriasAtuais.length, aberta_por_padrao: false })
     renderizarCategorias()
 })
 
@@ -1415,7 +1424,8 @@ document.getElementById("btn-salvar-categorias").addEventListener("click", async
     const categoriasParaSalvar = categoriasAtuais.map((c, i) => ({
         nome: c.nome.trim(),
         icone: (c.icone || "").trim(),
-        ordem: i
+        ordem: i,
+        aberta_por_padrao: !!c.aberta_por_padrao
     }))
 
     const { error } = await sb.from("lojas").update({ categorias: categoriasParaSalvar }).eq("id", lojaAtual.id)

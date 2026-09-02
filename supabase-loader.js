@@ -70,7 +70,7 @@ async function carregarDadosDaLoja() {
     ;(lojaDb.categorias || [])
         .sort((a, b) => a.ordem - b.ordem)
         .forEach(c => {
-            categorias[c.nome] = { icone: c.icone }
+            categorias[c.nome] = { icone: c.icone, aberta_por_padrao: c.aberta_por_padrao }
         })
 
     // 4) Busca os produtos dessa loja
