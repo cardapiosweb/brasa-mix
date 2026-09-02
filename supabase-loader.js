@@ -98,7 +98,8 @@ async function carregarDadosDaLoja() {
         esconder_setas: p.esconder_setas,
         esconder_observacao: p.esconder_observacao,
         icone: p.icone || undefined,
-        opcoes: p.opcoes || null
+        opcoes: p.opcoes || null,
+        mostrar_botao_duvida: p.mostrar_botao_duvida
     }))
 
     // 5) Avisa o script.js que os dados chegaram

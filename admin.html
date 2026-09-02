@@ -258,6 +258,30 @@
     }
     .categoria-header:first-child{margin-top:0;}
 
+    /* Cabeçalho de card recolhível (ex: "Categorias do cardápio") */
+    .card-header-clicavel{
+        background:none;border:none;padding:0;margin:0;width:100%;text-align:left;cursor:pointer;
+    }
+    .card-header-clicavel h2{display:flex;align-items:center;gap:8px;}
+    .card-header-clicavel:hover h2{color:var(--tinta);}
+    .categoria-header-seta{font-size:12px;transition:transform .15s;flex-shrink:0;}
+    .categoria-header-seta.aberta{transform:rotate(90deg);}
+
+    /* Cabeçalho de categoria clicável (lista de produtos) — recolhe os
+       produtos da categoria por padrão, só mostrando ao clicar. Reduz a
+       rolagem em cardápios grandes. */
+    .categoria-header-clicavel{
+        display:flex;align-items:center;gap:8px;width:100%;background:none;
+        border:none;border-bottom:1px solid var(--linha);
+        padding:0 0 6px;text-align:left;cursor:pointer;
+    }
+    .categoria-header-clicavel:hover{color:var(--tinta);}
+    .categoria-header-clicavel.aberta .categoria-header-seta{transform:rotate(90deg);}
+    .categoria-header-contagem{
+        margin-left:auto;background:var(--creme);color:#8a7361;font-size:11px;font-weight:700;
+        padding:2px 8px;border-radius:999px;text-transform:none;letter-spacing:normal;
+    }
+
     .horario-linha{
         padding:12px 14px;border:1px solid var(--linha);border-radius:10px;margin-bottom:8px;background:white;
     }
@@ -568,6 +592,23 @@
         </section>
 
         <section class="painel-secao" id="secao-produtos">
+            <!-- ===== Categorias do cardápio (ordem usada no site e no admin) ===== -->
+            <div class="card">
+                <button type="button" class="card-header-clicavel" id="btn-toggle-categorias">
+                    <h2><i class="fa fa-chevron-right categoria-header-seta" id="seta-toggle-categorias"></i> Categorias do cardápio</h2>
+                </button>
+                <div id="conteudo-categorias" style="display:none;">
+                    <p style="font-size:13px;color:#8a7361;margin:-8px 0 14px;">Use as setas pra reordenar — é essa ordem que aparece no site e na lista de produtos.</p>
+                    <div id="msg-categorias"></div>
+                    <div id="lista-categorias"></div>
+                    <button class="btn-novo" id="btn-nova-categoria" style="margin-top:10px;"><i class="fa fa-plus"></i> Nova categoria</button>
+                    <div style="margin-top:16px;">
+                        <button class="btn-primario" id="btn-salvar-categorias" style="width:auto;padding:10px 22px;">Salvar categorias</button>
+                        <span id="salvando-categorias" style="font-size:13px;color:var(--ok);margin-left:10px;display:none;">Salvo ✓</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="barra-acoes">
                 <div id="msg-produtos"></div>
                 <input type="text" id="busca-produtos" placeholder="Buscar produto..." style="padding:8px 12px;border:1.5px solid var(--linha);border-radius:8px;font-size:13px;min-width:180px;" />
@@ -578,7 +619,10 @@
 
         <section class="painel-secao" id="secao-loja">
             <div class="card">
-                <h2>Identidade</h2>
+                <button type="button" class="card-header-clicavel" data-toggle-card="identidade">
+                    <h2><i class="fa fa-chevron-right categoria-header-seta" data-seta-card="identidade"></i> Identidade</h2>
+                </button>
+                <div id="conteudo-card-identidade" style="display:none;">
                 <div id="msg-loja"></div>
                 <div class="grid2">
                     <div class="campo"><label>Nome da loja</label><input id="loja-nome" /></div>
@@ -634,29 +678,23 @@
                 </div>
                 <button class="btn-primario" id="btn-salvar-loja" style="width:auto;padding:10px 22px;">Salvar alterações</button>
                 <span id="salvando-loja">Salvo ✓</span>
+                </div>
             </div>
 
             <!-- ===== Horário de funcionamento ===== -->
             <div class="card">
-                <h2>Horário de funcionamento</h2>
+                <button type="button" class="card-header-clicavel" data-toggle-card="horario">
+                    <h2><i class="fa fa-chevron-right categoria-header-seta" data-seta-card="horario"></i> Horário de funcionamento</h2>
+                </button>
+                <div id="conteudo-card-horario" style="display:none;">
                 <p style="font-size:13px;color:#8a7361;margin:-8px 0 14px;">Esse horário decide se a loja aparece como "aberta"/"fechada" no site e também gera o texto exibido pro cliente — não precisa mais digitar o texto na mão.</p>
                 <div id="msg-horario"></div>
                 <div id="lista-horario"></div>
                 <button class="btn-primario" id="btn-salvar-horario" style="width:auto;padding:10px 22px;margin-top:14px;">Salvar horário</button>
                 <span id="salvando-horario" style="font-size:13px;color:var(--ok);margin-left:10px;display:none;">Salvo ✓</span>
-            </div>
-
-            <div class="card">
-                <h2>Categorias do cardápio</h2>
-                <p style="font-size:13px;color:#8a7361;margin:-8px 0 14px;">Use as setas pra reordenar — é essa ordem que aparece no site e na lista de produtos.</p>
-                <div id="msg-categorias"></div>
-                <div id="lista-categorias"></div>
-                <button class="btn-novo" id="btn-nova-categoria" style="margin-top:10px;"><i class="fa fa-plus"></i> Nova categoria</button>
-                <div style="margin-top:16px;">
-                    <button class="btn-primario" id="btn-salvar-categorias" style="width:auto;padding:10px 22px;">Salvar categorias</button>
-                    <span id="salvando-categorias" style="font-size:13px;color:var(--ok);margin-left:10px;display:none;">Salvo ✓</span>
                 </div>
             </div>
+
         </section>
 
         <section class="painel-secao" id="secao-dashboard">
@@ -704,6 +742,7 @@
             <label><input type="checkbox" id="prod-retirada-apenas" /> Só retirada</label>
             <label><input type="checkbox" id="prod-esconder-setas" /> Esconder setas de quantidade</label>
             <label><input type="checkbox" id="prod-esconder-observacao" /> Esconder campo de observação</label>
+            <label><input type="checkbox" id="prod-mostrar-duvida" /> Mostrar botão "Tirar dúvida" (WhatsApp) na lista</label>
         </div>
 
         <div class="linha-check" style="margin-top:10px;">
@@ -757,6 +796,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 let lojaAtual = null   // registro da loja do usuário logado
 let produtosAtuais = []
 let categoriasAtuais = []
+let categoriasAbertasProdutos = new Set() // nomes das categorias expandidas na lista de produtos (recolhidas por padrão)
 let canalMesasInscrito = false
 
 // ============================================================
@@ -1320,6 +1360,32 @@ function renderizarCategorias() {
     })
 }
 
+// Card "Categorias do cardápio" começa recolhido — clicar no título
+// abre/fecha o conteúdo, sem precisar rolar até o fim da aba Produtos
+// só pra ver os produtos.
+document.getElementById("btn-toggle-categorias").addEventListener("click", () => {
+    const conteudo = document.getElementById("conteudo-categorias")
+    const seta = document.getElementById("seta-toggle-categorias")
+    const vaiAbrir = conteudo.style.display === "none"
+    conteudo.style.display = vaiAbrir ? "block" : "none"
+    seta.classList.toggle("aberta", vaiAbrir)
+})
+
+// Cards recolhíveis genéricos (aba Dados da loja: Identidade, Horário)
+// — todos nascem fechados, reduzindo a rolagem pra chegar num campo
+// específico. Cada botão aponta pro seu conteúdo via
+// data-toggle-card="<nome>" -> #conteudo-card-<nome>.
+document.querySelectorAll("[data-toggle-card]").forEach(btn => {
+    const nome = btn.dataset.toggleCard
+    const conteudo = document.getElementById(`conteudo-card-${nome}`)
+    const seta = btn.querySelector(`[data-seta-card="${nome}"]`)
+    btn.addEventListener("click", () => {
+        const vaiAbrir = conteudo.style.display === "none"
+        conteudo.style.display = vaiAbrir ? "block" : "none"
+        seta.classList.toggle("aberta", vaiAbrir)
+    })
+})
+
 function moverCategoria(i, direcao) {
     const j = i + direcao
     if (j < 0 || j >= categoriasAtuais.length) return
@@ -1542,39 +1608,70 @@ function renderizarListaProdutos() {
         return
     }
 
-    let categoriaAtual = null
-    produtosFiltrados.forEach((p, i) => {
-        if (p.categoria !== categoriaAtual) {
-            categoriaAtual = p.categoria
-            const header = document.createElement("div")
-            header.className = "categoria-header"
-            header.textContent = categoriaAtual
-            lista.appendChild(header)
+    // Agrupa os produtos filtrados em blocos por categoria, mantendo a
+    // ordem que já vem de ordenarProdutosPorCategoria — cada bloco vira
+    // um cabeçalho clicável que expande/recolhe os produtos dele.
+    const grupos = []
+    produtosFiltrados.forEach(p => {
+        const ultimoGrupo = grupos[grupos.length - 1]
+        if (ultimoGrupo && ultimoGrupo.categoria === p.categoria) {
+            ultimoGrupo.produtos.push(p)
+        } else {
+            grupos.push({ categoria: p.categoria, produtos: [p] })
         }
+    })
 
-        const semBusca = !termo
-        const primeiroDaCategoria = i === 0 || produtosFiltrados[i - 1].categoria !== p.categoria
-        const ultimoDaCategoria = i === produtosFiltrados.length - 1 || produtosFiltrados[i + 1].categoria !== p.categoria
+    const semBusca = !termo
 
-        const linha = document.createElement("div")
-        linha.className = "produto-linha"
-        linha.innerHTML = `
-            ${semBusca ? `
-            <div class="produto-setas">
-                <button type="button" title="Subir" ${primeiroDaCategoria ? "disabled" : ""} onclick="moverProduto('${p.id}', -1)"><i class="fa fa-chevron-up"></i></button>
-                <button type="button" title="Descer" ${ultimoDaCategoria ? "disabled" : ""} onclick="moverProduto('${p.id}', 1)"><i class="fa fa-chevron-down"></i></button>
-            </div>` : ""}
-            <img src="${escaparHtml((p.fotos && p.fotos[0]) || '')}" onerror="this.style.background='#eee'" />
-            <div class="info">
-                <strong>${escaparHtml(p.nome)} ${p.oferta ? '<span class="tag tag-oferta">Oferta</span>' : ''} ${p.esgotado ? '<span class="tag tag-esgotado">Esgotado</span>' : ''} ${p.retirada_apenas ? '<span class="tag tag-retirada">Só retirada</span>' : ''} ${(p.estoque !== null && p.estoque !== undefined) ? `<span class="tag" style="background:#8a7361;color:white;">Estoque: ${escaparHtml(p.estoque)}</span>` : ''}</strong>
-                <span>R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</span>
-            </div>
-            <div class="produto-acoes">
-                <button class="btn-icone" title="Editar" onclick="editarProduto('${p.id}')"><i class="fa fa-pen"></i></button>
-                <button class="btn-icone apagar" title="Apagar" onclick="apagarProduto('${p.id}')"><i class="fa fa-trash"></i></button>
-            </div>
+    grupos.forEach(grupo => {
+        // Durante uma busca, toda categoria com resultado aparece aberta
+        // — senão o próprio produto buscado ficaria escondido.
+        const aberta = termo ? true : categoriasAbertasProdutos.has(grupo.categoria)
+
+        const header = document.createElement("button")
+        header.type = "button"
+        header.className = "categoria-header categoria-header-clicavel" + (aberta ? " aberta" : "")
+        header.innerHTML = `
+            <i class="fa fa-chevron-right categoria-header-seta"></i>
+            <span>${escaparHtml(grupo.categoria)}</span>
+            <span class="categoria-header-contagem">${grupo.produtos.length}</span>
         `
-        lista.appendChild(linha)
+        header.addEventListener("click", () => {
+            if (categoriasAbertasProdutos.has(grupo.categoria)) {
+                categoriasAbertasProdutos.delete(grupo.categoria)
+            } else {
+                categoriasAbertasProdutos.add(grupo.categoria)
+            }
+            renderizarListaProdutos()
+        })
+        lista.appendChild(header)
+
+        if (!aberta) return // categoria fechada — não desenha os produtos, economiza rolagem
+
+        grupo.produtos.forEach((p, i) => {
+            const primeiroDaCategoria = i === 0
+            const ultimoDaCategoria = i === grupo.produtos.length - 1
+
+            const linha = document.createElement("div")
+            linha.className = "produto-linha"
+            linha.innerHTML = `
+                ${semBusca ? `
+                <div class="produto-setas">
+                    <button type="button" title="Subir" ${primeiroDaCategoria ? "disabled" : ""} onclick="moverProduto('${p.id}', -1)"><i class="fa fa-chevron-up"></i></button>
+                    <button type="button" title="Descer" ${ultimoDaCategoria ? "disabled" : ""} onclick="moverProduto('${p.id}', 1)"><i class="fa fa-chevron-down"></i></button>
+                </div>` : ""}
+                <img src="${escaparHtml((p.fotos && p.fotos[0]) || '')}" onerror="this.style.background='#eee'" />
+                <div class="info">
+                    <strong>${escaparHtml(p.nome)} ${p.oferta ? '<span class="tag tag-oferta">Oferta</span>' : ''} ${p.esgotado ? '<span class="tag tag-esgotado">Esgotado</span>' : ''} ${p.retirada_apenas ? '<span class="tag tag-retirada">Só retirada</span>' : ''} ${(p.estoque !== null && p.estoque !== undefined) ? `<span class="tag" style="background:#8a7361;color:white;">Estoque: ${escaparHtml(p.estoque)}</span>` : ''}</strong>
+                    <span>R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</span>
+                </div>
+                <div class="produto-acoes">
+                    <button class="btn-icone" title="Editar" onclick="editarProduto('${p.id}')"><i class="fa fa-pen"></i></button>
+                    <button class="btn-icone apagar" title="Apagar" onclick="apagarProduto('${p.id}')"><i class="fa fa-trash"></i></button>
+                </div>
+            `
+            lista.appendChild(linha)
+        })
     })
 }
 
@@ -1638,6 +1735,10 @@ function abrirModalProduto(produto) {
     document.getElementById("prod-retirada-apenas").checked = produto ? !!produto.retirada_apenas : false
         document.getElementById("prod-esconder-setas").checked = produto ? !!produto.esconder_setas : false
         document.getElementById("prod-esconder-observacao").checked = produto ? !!produto.esconder_observacao : false
+        // Produto novo já nasce com o botão marcado — só um produto já
+        // existente que teve o campo salvo como false é que aparece
+        // desmarcado.
+        document.getElementById("prod-mostrar-duvida").checked = produto ? produto.mostrar_botao_duvida !== false : true
 
         opcoesProdutoAtual = (produto && produto.opcoes) ? JSON.parse(JSON.stringify(produto.opcoes)) : []
     document.getElementById("prod-tem-opcoes").checked = opcoesProdutoAtual.length > 0
@@ -1689,6 +1790,7 @@ document.getElementById("btn-salvar-produto").addEventListener("click", async ()
         retirada_apenas: document.getElementById("prod-retirada-apenas").checked,
         esconder_setas: document.getElementById("prod-esconder-setas").checked,
         esconder_observacao: document.getElementById("prod-esconder-observacao").checked,
+        mostrar_botao_duvida: document.getElementById("prod-mostrar-duvida").checked,
         opcoes: temOpcoes ? opcoesProdutoAtual : null
     }
     if (!id) registro.ordem = produtosAtuais.length

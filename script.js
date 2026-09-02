@@ -259,6 +259,10 @@ function criarCardProduto(produto) {
             <div class="product-footer">
                 ${esconderPreco ? "<span></span>" : `<p class="font-bold text-lg text-laranja">R$ ${precoFormatado}</p>`}
                 <div class="product-footer-actions">
+                    ${produto.mostrar_botao_duvida ? `
+                    <button class="whats-duvida-btn" data-id="${produto.id}" title="Tirar dúvida no WhatsApp">
+                        <i class="fab fa-whatsapp"></i><span>&nbsp;Dúvida</span>
+                    </button>` : ""}
                     ${semSetas ? "" : `
                     <div class="qty-selector" data-qty="1">
                         <button class="qty-btn qty-decrease" type="button">−</button>
@@ -660,6 +664,18 @@ function avisarEstoqueInsuficiente(disponivel) {
 // cards sendo criados dinamicamente pelo renderizarProdutos)
 // ===========================
 document.getElementById("menu").addEventListener("click", function (event) {
+    const duvidaBtn = event.target.closest(".whats-duvida-btn")
+    if (duvidaBtn) {
+        const id = duvidaBtn.getAttribute("data-id")
+        const produto = produtos.find(p => String(p.id) === id)
+        if (produto) {
+            const precoFormatado = produto.preco.toFixed(2).replace(".", ",")
+            const msg = encodeURIComponent(`Quero saber mais sobre: ${produto.nome} - R$ ${precoFormatado} (${produto.categoria})`)
+            window.open(`https://wa.me/${loja.whatsapp}?text=${msg}`, "_blank")
+        }
+        return
+    }
+
     const increaseBtn = event.target.closest(".qty-increase")
     const decreaseBtn = event.target.closest(".qty-decrease")
     if (increaseBtn || decreaseBtn) {
