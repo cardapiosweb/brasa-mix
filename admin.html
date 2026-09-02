@@ -1148,6 +1148,7 @@ async function iniciarPainel(user) {
     telaPainel.style.display = "block"
     document.getElementById("painel-nome-loja").textContent = lojaAtual.nome
     document.getElementById("inicio-titulo").textContent = `Olá, ${lojaAtual.nome}! 👋`
+    atualizarStatusLoja()
 
     renderizarHorarioForm(lojaAtual.horario)
 
