@@ -188,13 +188,6 @@
         .card{padding:16px;}
         .campo input, .campo select, .campo textarea{font-size:16px;}
         .aba-btn{font-size:13px;padding:9px 13px;}
-        .categoria-linha{
-        grid-template-columns:1fr auto;
-        grid-template-areas:
-            "nome nome"
-            "icone auto"
-            "setas apagar";
-    }
         .item-opcao input.item-opcao-nome,
         .item-opcao input.item-opcao-preco,
         .grupo-opcao-linha2 .campo input,
@@ -319,6 +312,28 @@
     .categoria-setas button{background:none;border:1px solid var(--linha);border-radius:5px;width:24px;height:20px;font-size:10px;color:var(--carvao);}
     .categoria-setas button:hover{border-color:var(--tinta);color:var(--tinta);}
     .categoria-setas button:disabled{opacity:.3;cursor:not-allowed;}
+
+    /* Categoria-linha no mobile: empilha em 3 linhas (nome / ícone+checkbox
+       / setas+apagar) em vez das 5 colunas lado a lado do desktop, que
+       ficavam espremidas e cortadas em telas estreitas. Precisa vir DEPOIS
+       da regra base acima — CSS resolve empate de especificidade pela
+       ordem no arquivo, então uma versão mobile colocada antes da base
+       nunca vencia, mesmo em telas pequenas. */
+    @media (max-width: 600px) {
+        .categoria-linha{
+            grid-template-columns: 1fr auto;
+            grid-template-areas:
+                "nome nome"
+                "icone auto"
+                "setas apagar";
+            row-gap: 8px;
+        }
+        .categoria-linha .categoria-auto{
+            justify-self: end;
+        }
+    }
+
+    /* ---------- MODAL DE PRODUTO ---------- */
 
     #modal-produto{
         display:none;position:fixed;inset:0;background:rgba(36,27,22,.6);z-index:200;
