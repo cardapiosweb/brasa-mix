@@ -53,6 +53,10 @@
 
         * { box-sizing: border-box; }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
             font-family: var(--fonte-texto);
             background-color: var(--creme);
@@ -86,6 +90,29 @@
         .add-to-cart-btn:hover {
             background-color: var(--laranja-escuro);
             transform: rotate(-8deg);
+        }
+
+        /* Botão "tirar dúvida" no card do produto (lista) */
+        .whats-duvida-btn {
+            background-color: var(--verde-manjericao);
+            color: white;
+            padding: 7px 10px;
+            border-radius: 999px;
+            transition: background-color 0.2s, transform 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            font-size: 10.5px;
+            font-weight: 700;
+            white-space: nowrap;
+            line-height: 1;
+        }
+        .whats-duvida-btn i {
+            font-size: 12px;
+        }
+        .whats-duvida-btn:hover {
+            background-color: #395530;
         }
 
         /* Contador de quantidade */
@@ -172,10 +199,36 @@
             box-shadow: 0 3px 0 rgba(36,27,22,0.12);
         }
 
-        @media (max-width: 360px) {
+        @media (max-width: 480px) {
             #menu img.product-clickable {
-                width: 84px !important;
-                height: 84px !important;
+                width: 72px !important;
+                height: 72px !important;
+            }
+
+            #menu .flex.gap-6 {
+                gap: 10px;
+            }
+            .product-info {
+                margin-left: 0;
+            }
+
+            .product-footer {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .product-footer-actions {
+                width: 100%;
+                justify-content: space-between;
+                margin-left: 0;
+            }
+        }
+
+        @media (max-width: 340px) {
+            .whats-duvida-btn span {
+                display: none;
+            }
+            .whats-duvida-btn {
+                padding: 8px;
             }
         }
 
@@ -292,6 +345,25 @@
             font-weight: bold;
             margin-left: 6px;
             vertical-align: middle;
+        }
+
+        /* Badge de "sob encomenda" (antecedência mínima) */
+        .badge-encomenda {
+            background-color: #5B7A99;
+            color: white;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-left: 6px;
+            vertical-align: middle;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            letter-spacing: 0.02em;
+        }
+        .badge-encomenda i {
+            font-size: 9px;
         }
 
         /* Opções de entrega/retirada e pagamento no modal */
@@ -857,6 +929,8 @@
         #header-banner {
             background-color: var(--carvao);
             position: relative;
+            min-height: 420px;
+            padding: 40px 16px;
         }
         #header-banner::before {
             content: "";
@@ -882,7 +956,12 @@
             box-shadow: 0 3px 14px rgba(0,0,0,0.45);
         }
         #header-banner h1 {
-            font-size: 40px;
+            /* clamp em vez de tamanho fixo: em telas estreitas (320px)
+               a fonte encolhe sozinha o suficiente pra caber nomes de
+               loja mais longos, sem depender só do breakpoint de 420px
+               abaixo — que usava um valor fixo (30px) e ainda vazava
+               com nomes compridos. */
+            font-size: clamp(22px, 7vw, 40px);
             font-weight: 800;
             color: var(--creme);
             letter-spacing: -0.01em;
@@ -891,11 +970,65 @@
             max-width: 90%;
             margin-left: auto;
             margin-right: auto;
+            overflow-wrap: break-word;
         }
         @media (max-width: 420px) {
-            #header-banner h1 { font-size: 30px; }
+            #header-banner { min-height: 400px; height: auto; }
             #header-banner .selo { width: 96px; height: 96px; }
             #header-banner .selo img { width: 84px; height: 84px; }
+
+            .selo-confianca-flutuante {
+                margin-top: 10px;
+                padding: 6px 14px 6px 8px;
+                gap: 9px;
+            }
+            .selo-confianca-icone {
+                width: 30px;
+                height: 30px;
+                font-size: 13px;
+                border-radius: 9px;
+            }
+            .selo-confianca-principal { font-size: 12px; }
+            .selo-confianca-legenda { font-size: 10px; }
+        }
+
+        /* Telas baixas (altura), independente da largura — em vez de
+           forçar uma altura fixa (que corta conteúdo se não bater o
+           número exato), o header passa a ter altura automática
+           (dada pelo próprio conteúdo) e o conteúdo interno é
+           encolhido, então o header naturalmente fica mais baixo,
+           sem risco de sobreposição. */
+        @media (max-height: 600px) {
+            #header-banner {
+                height: auto;
+                min-height: 0;
+                padding: 90px 0 20px;
+            }
+            #header-banner > div {
+                height: auto;
+            }
+            #header-banner .selo { width: 64px; height: 64px; border-width: 3px; }
+            #header-banner .selo img { width: 54px; height: 54px; }
+
+            .selo-confianca-flutuante {
+                margin-top: 6px;
+                padding: 5px 12px 5px 6px;
+                gap: 8px;
+                max-width: calc(100% - 90px);
+                white-space: normal;
+            }
+            .selo-confianca-icone { width: 28px; height: 28px; font-size: 12px; }
+            .selo-confianca-principal { font-size: 11.5px; }
+            .selo-confianca-legenda { font-size: 10px; }
+
+            #header-banner h1 {
+                margin-top: 6px !important;
+                font-size: clamp(18px, 6vw, 30px);
+            }
+            #header-banner .tagline { font-size: 15px; margin-top: -2px; }
+            #header-banner .endereco { margin-top: 4px !important; font-size: 12px; }
+            #header-banner .mt-5 { margin-top: 8px !important; }
+            .hero-ctas { margin-top: 8px !important; }
         }
         #header-banner .tagline {
             font-family: var(--fonte-script);
@@ -922,6 +1055,7 @@
         #date-span span {
             text-shadow: 0 1px 3px rgba(0,0,0,0.5);
         }
+
         .status-loja-pill{
             display:flex;align-items:center;gap:6px;
             padding:5px 12px;border-radius:999px;font-size:13px;font-weight:700;
@@ -930,10 +1064,292 @@
         .status-loja-pill.fechada{
             background:rgba(179,38,30,0.18);color:#F3A7A1;border-color:rgba(243,167,161,0.5);
         }
+
+        .selo-confianca-flutuante {
+            position: relative;
+            margin-top: 16px;
+            background: var(--creme);
+            border-radius: 16px;
+            padding: 10px 20px 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            z-index: 3;
+            white-space: nowrap;
+        }
+        .selo-confianca-icone {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: var(--laranja-claro);
+            color: var(--laranja);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .selo-confianca-textos {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            line-height: 1.25;
+        }
+        .selo-confianca-principal {
+            font-family: var(--fonte-titulo);
+            font-weight: 800;
+            font-size: 14.5px;
+            color: var(--carvao);
+        }
+        .selo-confianca-legenda {
+            font-size: 11.5px;
+            color: var(--carvao-suave);
+        }
+        body.dark .selo-confianca-flutuante { background: #241B16; }
+        body.dark .selo-confianca-principal { color: #F3E9DA; }
+        body.dark .selo-confianca-legenda { color: #C9B79E; }
+
         .status-loja-bolinha{
             width:7px;height:7px;border-radius:50%;background:#4ADE80;flex-shrink:0;
         }
         .status-loja-pill.fechada .status-loja-bolinha{background:#EF4444;}
+
+        /* ===== HERO: botões de chamada (Ver cardápio / WhatsApp) ===== */
+        .hero-ctas {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 22px;
+        }
+        .hero-cta-primaria,
+        .hero-cta-secundaria {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 22px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 14px;
+            text-decoration: none;
+            transition: transform 0.2s, background-color 0.2s, opacity 0.2s;
+            cursor: pointer;
+            border: none;
+        }
+        .hero-cta-primaria {
+            background: var(--laranja);
+            color: white;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+        }
+        .hero-cta-primaria:hover { background: var(--laranja-escuro); transform: translateY(-2px); }
+        .hero-cta-secundaria {
+            background: rgba(251,243,228,0.12);
+            color: var(--creme);
+            border: 1.5px solid rgba(251,243,228,0.5);
+        }
+        .hero-cta-secundaria:hover { background: rgba(251,243,228,0.22); transform: translateY(-2px); }
+
+        /* ===== SEÇÃO: COMO FUNCIONA ===== */
+        #como-funciona {
+            background: var(--creme);
+            padding: 54px 0 56px;
+        }
+        .secao-cabecalho {
+            text-align: center;
+            max-width: 560px;
+            margin: 0 auto 36px;
+            padding: 0 16px;
+        }
+        .secao-titulo {
+            font-family: var(--fonte-titulo);
+            font-size: clamp(22px, 4vw, 30px);
+            font-weight: 800;
+            color: var(--carvao);
+        }
+        .secao-subtitulo {
+            margin-top: 8px;
+            color: var(--carvao-suave);
+            font-size: 14.5px;
+        }
+        .passos-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+        @media (max-width: 760px) {
+            .passos-grid { grid-template-columns: 1fr; }
+        }
+        .passo-card {
+            position: relative;
+            background: white;
+            border: 1.5px solid var(--linha);
+            border-radius: 16px;
+            padding: 26px 22px;
+            overflow: hidden;
+        }
+        .passo-numero {
+            position: absolute;
+            top: 8px;
+            right: 16px;
+            font-family: var(--fonte-titulo);
+            font-size: 46px;
+            font-weight: 800;
+            color: var(--linha);
+            line-height: 1;
+            user-select: none;
+        }
+        .passo-icone {
+            position: relative;
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            background: var(--laranja-claro);
+            color: var(--laranja);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-bottom: 14px;
+        }
+        .passo-titulo {
+            font-family: var(--fonte-titulo);
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 6px;
+            position: relative;
+        }
+        .passo-desc {
+            font-size: 13.5px;
+            color: var(--carvao-suave);
+            line-height: 1.5;
+            position: relative;
+        }
+        body.dark #como-funciona { background-color: #171210; }
+        body.dark .passo-card { background-color: #241B16; border-color: #3A2C24; }
+        body.dark .passo-numero { color: #3A2C24; }
+        body.dark .secao-titulo { color: #F3E9DA; }
+        body.dark .secao-subtitulo { color: #C9B79E; }
+
+        /* "Como funciona" no mobile: versão compacta — cards menores e
+           mais próximos, pra não empurrar o cardápio pra bem mais baixo
+           na tela. Não altera nada no desktop. */
+        @media (max-width: 480px) {
+            #como-funciona { padding: 34px 0 30px; }
+            .secao-cabecalho { margin-bottom: 22px; }
+            .passos-grid { gap: 12px; }
+            .passo-card { padding: 16px 16px 14px; }
+            .passo-numero { font-size: 32px; top: 6px; right: 12px; }
+            .passo-icone {
+                width: 38px;
+                height: 38px;
+                font-size: 15px;
+                margin-bottom: 8px;
+            }
+            .passo-titulo { font-size: 14.5px; margin-bottom: 3px; }
+            .passo-desc { font-size: 12.5px; line-height: 1.4; }
+        }
+
+        /* ===== SEÇÃO: DIFERENCIAIS ===== */
+        #diferenciais {
+            padding: 8px 16px 54px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .diferenciais-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+        @media (max-width: 760px) {
+            .diferenciais-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        .diferencial-card {
+            border: 1.5px solid var(--linha);
+            border-radius: 14px;
+            padding: 18px 16px;
+            background: white;
+            text-align: left;
+        }
+        .diferencial-icone {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: var(--laranja-claro);
+            color: var(--laranja);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            margin-bottom: 10px;
+        }
+        .diferencial-titulo {
+            font-family: var(--fonte-titulo);
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+        .diferencial-desc {
+            font-size: 12.5px;
+            color: var(--carvao-suave);
+            line-height: 1.4;
+        }
+        body.dark .diferencial-card { background-color: #241B16; border-color: #3A2C24; }
+
+        /* ===== CTA FINAL (antes do rodapé) ===== */
+        #cta-final {
+            margin: 10px 16px 44px;
+            max-width: 1100px;
+            margin-left: auto;
+            margin-right: auto;
+            background: var(--carvao);
+            border-radius: 22px;
+            padding: 46px 26px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        #cta-final::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 15% 20%, rgba(217,164,65,0.18) 0, transparent 45%),
+                        radial-gradient(circle at 85% 80%, rgba(169,50,30,0.28) 0, transparent 50%);
+        }
+        .cta-final-conteudo { position: relative; z-index: 1; }
+        .cta-final-titulo {
+            font-family: var(--fonte-titulo);
+            font-size: clamp(22px, 4vw, 30px);
+            font-weight: 800;
+            color: var(--creme);
+        }
+        .cta-final-desc {
+            margin-top: 8px;
+            color: #C9B79E;
+            font-size: 14.5px;
+            max-width: 420px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .cta-final-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 22px;
+            background: var(--laranja);
+            color: white;
+            border: none;
+            padding: 13px 26px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+        .cta-final-btn:hover { background: var(--laranja-escuro); transform: translateY(-2px); }
 
         /* ===== Elementos escondidos via JS (modo mesa / retirada-apenas) ===== */
         .oculto-modo {
@@ -992,6 +1408,130 @@
         body.dark #footer-promo a {
             color: #C9B79E;
         }
+
+        /* ===== RODAPÉ INSTITUCIONAL (marca, navegação, contato, horários) ===== */
+        #rodape-loja {
+            background: var(--creme);
+            border-top: 1.5px solid var(--linha);
+            padding: 48px 16px 0;
+        }
+        .rodape-grid {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.4fr 1fr 1fr 1fr;
+            gap: 28px;
+            padding-bottom: 36px;
+        }
+        @media (max-width: 760px) {
+            .rodape-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 480px) {
+            .rodape-grid { grid-template-columns: 1fr; }
+        }
+        .rodape-marca {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .rodape-marca-icone {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: var(--laranja);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .rodape-marca-nome {
+            font-family: var(--fonte-titulo);
+            font-weight: 800;
+            font-size: 18px;
+            color: var(--carvao);
+        }
+        .rodape-descricao {
+            font-size: 13.5px;
+            color: var(--carvao-suave);
+            line-height: 1.6;
+            max-width: 320px;
+        }
+        .rodape-titulo-coluna {
+            font-family: var(--fonte-titulo);
+            font-weight: 700;
+            font-size: 14.5px;
+            color: var(--carvao);
+            margin-bottom: 14px;
+        }
+        .rodape-links {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .rodape-links a {
+            font-size: 13.5px;
+            color: var(--carvao-suave);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .rodape-links a:hover { color: var(--laranja); }
+        .rodape-contato-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 9px;
+            font-size: 13.5px;
+            color: var(--carvao-suave);
+            margin-bottom: 12px;
+            line-height: 1.4;
+            text-decoration: none;
+        }
+        .rodape-contato-item i {
+            color: var(--laranja);
+            margin-top: 2px;
+            width: 14px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        a.rodape-contato-item:hover { color: var(--laranja); }
+        .rodape-copyright {
+            border-top: 1.5px solid var(--linha);
+            padding: 18px 0 20px;
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--carvao-suave);
+        }
+        body.dark #rodape-loja { background-color: #171210; border-color: #3A2C24; }
+        body.dark .rodape-marca-nome,
+        body.dark .rodape-titulo-coluna { color: #F3E9DA; }
+        body.dark .rodape-descricao,
+        body.dark .rodape-links a,
+        body.dark .rodape-contato-item,
+        body.dark .rodape-copyright { color: #C9B79E; }
+        body.dark .rodape-copyright { border-color: #3A2C24; }
+
+        /* Rodapé institucional: ajustes finos pra telas pequenas —
+           menos respiro vertical, seções mais próximas e copyright
+           centralizado (em vez de colado nas bordas). */
+        @media (max-width: 480px) {
+            #rodape-loja { padding: 36px 16px 0; }
+            .rodape-grid { gap: 26px; padding-bottom: 28px; }
+            .rodape-descricao { max-width: 100%; }
+            .rodape-copyright {
+                justify-content: center;
+                text-align: center;
+                padding: 16px 0 18px;
+                font-size: 11.5px;
+            }
+        }
     </style>
 </head>
 
@@ -1017,8 +1557,8 @@
     </a>
 
     <!-- HEADER -->
-    <header class="w-full h-[420px] bg-cover" style="background-position: center 15%;" id="header-banner">
-        <div class="w-full h-full flex flex-col justify-center items-center">
+    <header class="w-full bg-cover" style="background-position: center 15%;" id="header-banner">
+        <div class="w-full flex flex-col justify-center items-center">
 
             <div class="selo shadow-lg hover:scale-110 duration-200">
                 <img
@@ -1031,6 +1571,14 @@
                 <div style="display:none" class="w-full h-full rounded-full flex items-center justify-center">
                     <i class="fa fa-store text-5xl" style="color: var(--laranja);"></i>
                 </div>
+            </div>
+
+            <div class="selo-confianca-flutuante" id="selo-confianca" style="display:none;">
+                <span class="selo-confianca-icone"><i class="fa fa-utensils"></i></span>
+                <span class="selo-confianca-textos">
+                    <span class="selo-confianca-principal" id="selo-confianca-texto"></span>
+                    <span class="selo-confianca-legenda" id="selo-confianca-sub"></span>
+                </span>
             </div>
 
             <h1 class="mt-4 mb-1" id="loja-nome"></h1>
@@ -1049,9 +1597,72 @@
                 </div>
             </div>
 
+            <div class="hero-ctas">
+                <a href="#titulo-secao-menu" class="hero-cta-primaria">
+                    <i class="fa fa-drumstick-bite"></i> Ver cardápio
+                </a>
+                <a href="#" class="hero-cta-secundaria" onclick="event.preventDefault(); document.getElementById('whats-flutuante').click();">
+                    <i class="fab fa-whatsapp"></i> Chamar no WhatsApp
+                </a>
+            </div>
+
         </div>
     </header>
     <!-- FIM HEADER -->
+
+    <!-- ===== COMO FUNCIONA ===== -->
+    <section id="como-funciona">
+        <div class="secao-cabecalho">
+            <h2 class="secao-titulo">Como funciona</h2>
+            <p class="secao-subtitulo">Do cardápio até a sua mesa (ou a sua casa) em poucos passos.</p>
+        </div>
+        <div class="passos-grid">
+            <div class="passo-card">
+                <span class="passo-numero">01</span>
+                <span class="passo-icone"><i class="fa fa-drumstick-bite"></i></span>
+                <p class="passo-titulo">Monte seu pedido</p>
+                <p class="passo-desc">Escolha os espetos e cortes no cardápio abaixo e adicione ao carrinho na quantidade que quiser.</p>
+            </div>
+            <div class="passo-card">
+                <span class="passo-numero">02</span>
+                <span class="passo-icone"><i class="fa fa-route"></i></span>
+                <p class="passo-titulo">Escolha como receber</p>
+                <p class="passo-desc">Entrega no seu endereço, retirada no balcão ou direto da sua mesa, se estiver aqui com a gente.</p>
+            </div>
+            <div class="passo-card">
+                <span class="passo-numero">03</span>
+                <span class="passo-icone"><i class="fab fa-whatsapp"></i></span>
+                <p class="passo-titulo">Confirme no WhatsApp</p>
+                <p class="passo-desc">Seu pedido segue direto pra churrasqueira e a gente confirma tudo com você por lá.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== DIFERENCIAIS ===== -->
+    <section id="diferenciais">
+        <div class="diferenciais-grid">
+            <div class="diferencial-card">
+                <span class="diferencial-icone"><i class="fa fa-fire"></i></span>
+                <p class="diferencial-titulo">Na brasa, no ponto</p>
+                <p class="diferencial-desc">Espetos e cortes preparados na hora do seu pedido.</p>
+            </div>
+            <div class="diferencial-card">
+                <span class="diferencial-icone"><i class="fa fa-leaf"></i></span>
+                <p class="diferencial-titulo">Carnes selecionadas</p>
+                <p class="diferencial-desc">Cortes escolhidos todos os dias antes de ir pra brasa.</p>
+            </div>
+            <div class="diferencial-card">
+                <span class="diferencial-icone"><i class="fa fa-wallet"></i></span>
+                <p class="diferencial-titulo">Pague como quiser</p>
+                <p class="diferencial-desc">Pix, dinheiro ou cartão na entrega ou retirada.</p>
+            </div>
+            <div class="diferencial-card">
+                <span class="diferencial-icone"><i class="fab fa-whatsapp"></i></span>
+                <p class="diferencial-titulo">Fala com a gente</p>
+                <p class="diferencial-desc">Dúvida em algum corte? É só chamar no WhatsApp.</p>
+            </div>
+        </div>
+    </section>
 
     <h2 class="text-2xl md:text-3xl font-bold text-center mt-9 mb-4" id="titulo-secao-menu"></h2>
 
@@ -1061,6 +1672,17 @@
     </div>
 
     <div id="menu"></div>
+
+    <!-- ===== CTA FINAL ===== -->
+    <section id="cta-final">
+        <div class="cta-final-conteudo">
+            <p class="cta-final-titulo">Bateu aquela fome?</p>
+            <p class="cta-final-desc">Seu espeto favorito está a poucos toques de distância. Monte seu pedido agora.</p>
+            <button type="button" class="cta-final-btn" onclick="document.getElementById('cart-btn').click()">
+                <i class="fa fa-cart-plus"></i> Ver meu pedido
+            </button>
+        </div>
+    </section>
 
     <!-- ===== MODAL DE PRODUTO ===== -->
     <div id="product-modal" onclick="fecharModalProdutoSeOverlay(event)">
@@ -1261,6 +1883,48 @@
     </div>
     <!-- FIM MODAL CART -->
 
+    <!-- ===== RODAPÉ INSTITUCIONAL ===== -->
+    <footer id="rodape-loja">
+        <div class="rodape-grid">
+            <div>
+                <div class="rodape-marca">
+                    <span class="rodape-marca-icone"><i class="fa fa-drumstick-bite"></i></span>
+                    <span class="rodape-marca-nome" id="rodape-nome">Brasa Mix</span>
+                </div>
+                <p class="rodape-descricao">Espetos e cortes especiais preparados na brasa, com ingredientes frescos selecionados todos os dias. Peça pelo delivery e receba quentinho na sua casa.</p>
+            </div>
+
+            <div>
+                <p class="rodape-titulo-coluna">Navegação</p>
+                <div class="rodape-links">
+                    <a href="#">Início</a>
+                    <a href="#titulo-secao-menu">Cardápio</a>
+                </div>
+            </div>
+
+            <div>
+                <p class="rodape-titulo-coluna">Contato</p>
+                <a href="#" id="rodape-whats-link" class="rodape-contato-item" target="_blank">
+                    <i class="fab fa-whatsapp"></i> Fale no WhatsApp
+                </a>
+                <span class="rodape-contato-item">
+                    <i class="fa fa-location-dot"></i> <span id="rodape-endereco">Endereço da loja</span>
+                </span>
+            </div>
+
+            <div>
+                <p class="rodape-titulo-coluna">Horários</p>
+                <span class="rodape-contato-item">
+                    <i class="fa fa-clock"></i> <span id="rodape-horario">Confira no topo da página</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="rodape-copyright">
+            <span>&copy; <span id="rodape-ano"></span> <span id="rodape-nome-copyright">Brasa Mix</span>. Todos os direitos reservados.</span>
+        </div>
+    </footer>
+
     <!-- Rodapé promocional fixo — presente em todos os sites de clientes do serviço -->
     <footer id="footer-promo">
         <a href="https://cardapios-web.vercel.app/" target="_blank" rel="noopener noreferrer">
@@ -1272,6 +1936,51 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-loader.js"></script>
     <script src="script.js"></script>
+
+    <!-- Sincroniza os dados já carregados no cabeçalho (nome, endereço,
+         horário e link do WhatsApp) com o rodapé institucional, sem
+         precisar duplicar essa lógica no config-loja.js/script.js. -->
+    <script>
+    (function () {
+        function sincronizarRodape() {
+            var pares = [
+                ['loja-nome', 'rodape-nome'],
+                ['loja-nome', 'rodape-nome-copyright'],
+                ['loja-endereco', 'rodape-endereco'],
+                ['loja-horario', 'rodape-horario']
+            ];
+            pares.forEach(function (par) {
+                var origem = document.getElementById(par[0]);
+                var destino = document.getElementById(par[1]);
+                if (origem && destino && origem.textContent.trim()) {
+                    destino.textContent = origem.textContent.trim();
+                }
+            });
+
+            var whatsFonte = document.getElementById('whats-flutuante');
+            var whatsRodape = document.getElementById('rodape-whats-link');
+            if (whatsFonte && whatsRodape && whatsFonte.getAttribute('href') && whatsFonte.getAttribute('href') !== '#') {
+                whatsRodape.setAttribute('href', whatsFonte.getAttribute('href'));
+            }
+        }
+
+        var alvos = ['loja-nome', 'loja-endereco', 'loja-horario', 'whats-flutuante']
+            .map(function (id) { return document.getElementById(id); })
+            .filter(Boolean);
+
+        if (alvos.length) {
+            var observer = new MutationObserver(sincronizarRodape);
+            alvos.forEach(function (alvo) {
+                observer.observe(alvo, { childList: true, characterData: true, subtree: true, attributes: true });
+            });
+        }
+
+        var anoSpan = document.getElementById('rodape-ano');
+        if (anoSpan) { anoSpan.textContent = new Date().getFullYear(); }
+
+        sincronizarRodape();
+    })();
+    </script>
 
 </body>
 </html>
