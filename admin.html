@@ -1126,6 +1126,16 @@ sb.auth.getSession().then(({ data }) => {
     if (data.session) iniciarPainel(data.session.user)
 })
 
+// ---- Status da loja no cabeçalho (Ativa/Inativa — mesmo campo que
+// controla se ela aparece no site, aba Dados da loja) ----
+function atualizarStatusLoja() {
+    const statusEl = document.getElementById("painel-status-loja")
+    const textoEl = document.getElementById("painel-status-texto")
+    const ativa = !!lojaAtual.ativa
+    statusEl.classList.toggle("aberta", ativa)
+    textoEl.textContent = ativa ? "Loja ativa" : "Loja inativa"
+}
+
 // ============================================================
 // CARREGAR LOJA DO USUÁRIO LOGADO
 // ============================================================
