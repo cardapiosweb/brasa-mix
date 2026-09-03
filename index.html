@@ -860,6 +860,52 @@
         body.dark h2 { color: #F3E9DA; }
         body.dark .category-title { color: #F3E9DA; }
 
+        /* ===== CORREÇÃO DE CONTRASTE — DARK MODE ===== */
+
+        body.dark #menu {
+            color: #F3E9DA;
+        }
+
+        body.dark #menu .product-name-clickable {
+            color: #F3E9DA !important;
+        }
+
+        body.dark #menu .product-info {
+            color: #F3E9DA;
+        }
+
+        body.dark #menu .product-info p {
+            color: #C9B79E !important;
+        }
+
+        body.dark #menu .product-info .font-bold,
+        body.dark #menu .product-footer p {
+            color: #F3E9DA !important;
+        }
+
+        body.dark #menu .product-footer .text-laranja,
+        body.dark #menu .product-footer [style*="laranja"] {
+            color: var(--laranja) !important;
+        }
+
+        /* Textos gerais que podem vir das classes do Tailwind */
+        body.dark .text-gray-700,
+        body.dark .text-gray-800,
+        body.dark .text-gray-900 {
+            color: #F3E9DA !important;
+        }
+
+        body.dark .text-black {
+            color: #F3E9DA !important;
+        }
+
+        /* Textos secundários */
+        body.dark .text-gray-600,
+        body.dark .text-gray-500,
+        body.dark .text-gray-400 {
+            color: #C9B79E !important;
+        }
+
         /* Toggle dark mode */
         #dark-toggle {
             position: fixed;
