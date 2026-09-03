@@ -438,12 +438,19 @@
             flex: 1;
             text-align: center;
             font-weight: 600;
+            background-color: white;
+            color: var(--carvao);
         }
         .delivery-option.selected {
             border-color: var(--laranja);
             background-color: var(--laranja-claro);
             color: var(--laranja-escuro);
             font-weight: bold;
+        }
+        body.dark .delivery-option {
+            background-color: #2d2d2d;
+            color: #ffffff;
+            border-color: #444444;
         }
 
         /* Toggle Entrega/Retirada em formato pill (segmented control) */
@@ -851,7 +858,7 @@
         body.dark .text-gray-500 { color: #C9B79E !important; }
         body.dark .border-b { border-color: #3A2C24 !important; }
         body.dark #cart-modal > div { background-color: #241B16; }
-        body.dark .delivery-option { border-color: #3A2C24; background-color: #171210; color: #F3E9DA; }
+        body.dark .delivery-option { border-color: #444444; background-color: #2d2d2d; color: #ffffff; }
         body.dark .delivery-option.selected { background-color: #3A2416; border-color: var(--laranja); color: #F3C7B5; }
         body.dark input { background-color: #171210; color: #F3E9DA; border-color: #3A2C24; }
         body.dark .product-modal-box { background-color: #241B16; color: #F3E9DA; }
