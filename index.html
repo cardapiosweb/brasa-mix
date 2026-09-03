@@ -867,13 +867,29 @@
         body.dark h2 { color: #F3E9DA; }
         body.dark .category-title { color: #F3E9DA; }
 
-        /* Cards da seção "Como funciona" em dark mode */
-        body.dark .rounded-2xl { background-color: #2d2d2d; color: #ffffff; }
-        body.dark .rounded-2xl h3,
-        body.dark .rounded-2xl p {
-            color: #ffffff;
+        /* Cards brancos da seção "Como funciona" em dark mode - FORÇA aplicação */
+        body.dark .rounded-lg,
+        body.dark .rounded-xl,
+        body.dark .rounded-2xl {
+            background-color: #2d2d2d !important;
+            color: #ffffff !important;
         }
-        body.dark .rounded-2xl i { color: #F7A070; }
+        body.dark .rounded-lg h3,
+        body.dark .rounded-xl h3,
+        body.dark .rounded-2xl h3,
+        body.dark .rounded-lg h2,
+        body.dark .rounded-xl h2,
+        body.dark .rounded-2xl h2,
+        body.dark .rounded-lg p,
+        body.dark .rounded-xl p,
+        body.dark .rounded-2xl p {
+            color: #ffffff !important;
+        }
+        body.dark .rounded-lg i,
+        body.dark .rounded-xl i,
+        body.dark .rounded-2xl i {
+            color: #F7A070 !important;
+        }
 
         /* Toggle dark mode */
         #dark-toggle {
