@@ -199,27 +199,89 @@
             box-shadow: 0 3px 0 rgba(36,27,22,0.12);
         }
 
+        /* Cardápio: sempre 2 colunas, mesmo abaixo do breakpoint "md"
+           do Tailwind (768px) — evita uma rolagem vertical enorme em
+           cardápios extensos. Sobrepõe a classe "grid-cols-1" que o
+           script.js aplica por padrão nos grids (categoria-grid e
+           skeleton de carregamento). */
+        @media (max-width: 767px) {
+            #menu .grid.grid-cols-1 {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 14px !important;
+            }
+        }
+
         @media (max-width: 480px) {
-            #menu img.product-clickable {
-                width: 72px !important;
-                height: 72px !important;
+            #menu .grid.grid-cols-1 {
+                gap: 8px !important;
+                padding-left: 8px;
+                padding-right: 8px;
             }
 
+            /* Card empilhado (imagem em cima, texto embaixo) — em 2
+               colunas de ~140px cada, imagem e texto lado a lado
+               ficariam espremidos demais pra ler. */
             #menu .flex.gap-6 {
-                gap: 10px;
+                flex-direction: column;
+                gap: 6px;
+            }
+            #menu img.product-clickable {
+                width: 100% !important;
+                height: 90px !important;
             }
             .product-info {
                 margin-left: 0;
+            }
+            .product-name-clickable {
+                font-size: 12.5px;
+                line-height: 1.25;
+            }
+            .product-info .text-sm {
+                font-size: 10.5px;
+                line-height: 1.25;
+            }
+            .product-footer p.font-bold.text-lg {
+                font-size: 13.5px;
             }
 
             .product-footer {
                 flex-direction: column;
                 align-items: stretch;
+                gap: 5px;
             }
             .product-footer-actions {
                 width: 100%;
                 justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 4px;
                 margin-left: 0;
+            }
+
+            #menu .whats-duvida-btn {
+                padding: 6px 7px;
+            }
+            #menu .whats-duvida-btn span {
+                display: none;
+            }
+            #menu .qty-selector {
+                gap: 3px;
+            }
+            #menu .qty-btn {
+                width: 22px;
+                height: 22px;
+                font-size: 12px;
+            }
+            #menu .qty-value {
+                font-size: 12px;
+                min-width: 14px;
+            }
+            #menu .add-to-cart-btn {
+                width: 30px;
+                height: 30px;
+                padding: 0;
+            }
+            #menu .add-to-cart-btn i {
+                font-size: 12px;
             }
         }
 
