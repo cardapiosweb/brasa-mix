@@ -860,52 +860,6 @@
         body.dark h2 { color: #F3E9DA; }
         body.dark .category-title { color: #F3E9DA; }
 
-        /* ===== CORREÇÃO DE CONTRASTE — DARK MODE ===== */
-
-        body.dark #menu {
-            color: #F3E9DA;
-        }
-
-        body.dark #menu .product-name-clickable {
-            color: #F3E9DA !important;
-        }
-
-        body.dark #menu .product-info {
-            color: #F3E9DA;
-        }
-
-        body.dark #menu .product-info p {
-            color: #C9B79E !important;
-        }
-
-        body.dark #menu .product-info .font-bold,
-        body.dark #menu .product-footer p {
-            color: #F3E9DA !important;
-        }
-
-        body.dark #menu .product-footer .text-laranja,
-        body.dark #menu .product-footer [style*="laranja"] {
-            color: var(--laranja) !important;
-        }
-
-        /* Textos gerais que podem vir das classes do Tailwind */
-        body.dark .text-gray-700,
-        body.dark .text-gray-800,
-        body.dark .text-gray-900 {
-            color: #F3E9DA !important;
-        }
-
-        body.dark .text-black {
-            color: #F3E9DA !important;
-        }
-
-        /* Textos secundários */
-        body.dark .text-gray-600,
-        body.dark .text-gray-500,
-        body.dark .text-gray-400 {
-            color: #C9B79E !important;
-        }
-
         /* Toggle dark mode */
         #dark-toggle {
             position: fixed;
@@ -1407,7 +1361,48 @@
             color: var(--carvao-suave);
             line-height: 1.4;
         }
-        body.dark .diferencial-card { background-color: #241B16; border-color: #3A2C24; }
+        /* ===== DARK MODE — CONTRASTE DOS TEXTOS ===== */
+
+        body.dark .diferencial-titulo {
+            color: #F3E9DA !important;
+        }
+
+        body.dark .diferencial-desc {
+            color: #C9B79E !important;
+        }
+
+        body.dark .passo-titulo {
+            color: #F3E9DA !important;
+        }
+
+        body.dark .passo-desc {
+            color: #C9B79E !important;
+        }
+
+        /* Títulos e textos das seções */
+        body.dark .secao-titulo {
+            color: #F3E9DA !important;
+        }
+
+        body.dark .secao-subtitulo {
+            color: #C9B79E !important;
+        }
+
+        /* Garantir contraste dentro dos cards */
+        body.dark .passo-card,
+        body.dark .diferencial-card {
+            color: #F3E9DA;
+        }
+
+        body.dark .passo-card p,
+        body.dark .diferencial-card p {
+            color: #F3E9DA;
+        }
+
+        body.dark .passo-card .passo-desc,
+        body.dark .diferencial-card .diferencial-desc {
+            color: #C9B79E !important;
+        }
 
         /* Diferenciais no mobile: cards mais baixos e mais próximos,
            mesmo espírito do "Como funciona" compacto acima. */
