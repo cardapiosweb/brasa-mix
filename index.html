@@ -1513,9 +1513,6 @@
         @media (max-width: 760px) {
             .rodape-grid { grid-template-columns: 1fr 1fr; }
         }
-        @media (max-width: 480px) {
-            .rodape-grid { grid-template-columns: 1fr; }
-        }
         .rodape-marca {
             display: flex;
             align-items: center;
@@ -1610,8 +1607,21 @@
            centralizado (em vez de colado nas bordas). */
         @media (max-width: 480px) {
             #rodape-loja { padding: 36px 16px 0; }
-            .rodape-grid { gap: 26px; padding-bottom: 28px; }
+            .rodape-grid {
+                grid-template-columns: 0.8fr 0.8fr 1.4fr;
+                gap: 16px 10px;
+                padding-bottom: 24px;
+            }
+            .rodape-marca-coluna { grid-column: 1 / -1; }
+            .rodape-grid > div:nth-child(2) { order: 2; }
+            .rodape-grid > div:nth-child(3) { order: 3; }
+            .rodape-grid > div:nth-child(4) { order: 1; }
             .rodape-descricao { max-width: 100%; }
+            .rodape-titulo-coluna { font-size: 12.5px; margin-bottom: 8px; }
+            .rodape-links { gap: 6px; }
+            .rodape-links a { font-size: 12px; }
+            .rodape-contato-item { margin-bottom: 8px; font-size: 12px; gap: 6px; }
+            .rodape-contato-item i { width: 11px; font-size: 11px; }
             .rodape-copyright {
                 justify-content: center;
                 text-align: center;
@@ -1973,7 +1983,7 @@
     <!-- ===== RODAPÉ INSTITUCIONAL ===== -->
     <footer id="rodape-loja">
         <div class="rodape-grid">
-            <div>
+            <div class="rodape-marca-coluna">
                 <div class="rodape-marca">
                     <span class="rodape-marca-icone"><i class="fa fa-drumstick-bite"></i></span>
                     <span class="rodape-marca-nome" id="rodape-nome">Brasa Mix</span>
@@ -1986,6 +1996,7 @@
                 <div class="rodape-links">
                     <a href="#">Início</a>
                     <a href="#titulo-secao-menu">Cardápio</a>
+                    <a href="#como-funciona">Como funciona</a>
                 </div>
             </div>
 
