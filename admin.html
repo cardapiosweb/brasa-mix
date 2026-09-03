@@ -2375,10 +2375,14 @@ async function carregarDashboard() {
     msg.innerHTML = ""
 
     try {
+        const inicioDeHoje = new Date()
+        inicioDeHoje.setHours(0, 0, 0, 0)
+
         const { data, error } = await sb
             .from("relatorio_dia")
             .select("*")
             .eq("loja_id", lojaAtual.id)
+            .gte("created_at", inicioDeHoje.toISOString())
 
         if (error) throw error
 
@@ -2402,6 +2406,8 @@ async function carregarDashboard() {
         document.getElementById("dash-top-produto").textContent = topProduto ? `${topProduto[0]} (${topProduto[1]}x)` : "—"
 
         window._pedidosHojeDashboard = pedidosHoje
+
+        limparRelatorioDiaAntigo()
     } catch (err) {
         msg.innerHTML = `<div class="aviso aviso-erro">Erro ao carregar o dashboard.</div>`
         console.error(err)
@@ -2447,6 +2453,42 @@ document.getElementById("btn-baixar-relatorio").addEventListener("click", () => 
 // (preserva quebras de linha graças ao white-space:pre-wrap do
 // CSS, sem interpretar nada como HTML) e "Mesa X" usa escapeHtml.
 // ============================================================
+// ============================================================
+// LIMPEZA DIÁRIA DO HISTÓRICO (Delivery + Mesa)
+// Mantém só os registros de HOJE em comandas_finalizadas — roda toda
+// vez que a aba Histórico Delivery ou Histórico Mesa é aberta e apaga
+// tudo de dias anteriores, pra não acumular pra sempre no banco e pro
+// relatório diário (relatorio_dia) ficar sempre confiável. Best effort,
+// não trava a tela se falhar.
+// ============================================================
+function inicioDoDiaISO() {
+    const inicio = new Date()
+    inicio.setHours(0, 0, 0, 0)
+    return inicio.toISOString()
+}
+
+async function limparHistoricoAntigo() {
+    try {
+        await sb.from("comandas_finalizadas")
+            .delete()
+            .eq("loja_id", lojaAtual.id)
+            .lt("created_at", inicioDoDiaISO())
+    } catch (err) {
+        console.error("Erro ao limpar histórico antigo", err)
+    }
+}
+
+async function limparRelatorioDiaAntigo() {
+    try {
+        await sb.from("relatorio_dia")
+            .delete()
+            .eq("loja_id", lojaAtual.id)
+            .lt("created_at", inicioDoDiaISO())
+    } catch (err) {
+        console.error("Erro ao limpar relatório do dia antigo", err)
+    }
+}
+
 let historicoMesaAtual = []
 
 async function carregarHistoricoMesa() {
@@ -2456,6 +2498,7 @@ async function carregarHistoricoMesa() {
         .select("*")
         .eq("loja_id", lojaAtual.id)
         .eq("origem", "mesa")
+        .gte("created_at", inicioDoDiaISO())
         .order("created_at", { ascending: false })
         .limit(30)
 
@@ -2467,6 +2510,8 @@ async function carregarHistoricoMesa() {
 
     historicoMesaAtual = data || []
     renderizarHistoricoMesa()
+
+    limparHistoricoAntigo()
 }
 
 function renderizarHistoricoMesa() {
@@ -2512,6 +2557,7 @@ async function carregarHistoricoDelivery() {
         .select("*")
         .eq("loja_id", lojaAtual.id)
         .eq("origem", "delivery")
+        .gte("created_at", inicioDoDiaISO())
         .order("created_at", { ascending: false })
         .limit(30)
 
@@ -2523,6 +2569,8 @@ async function carregarHistoricoDelivery() {
 
     historicoDeliveryAtual = data || []
     renderizarHistoricoDelivery()
+
+    limparHistoricoAntigo()
 }
 
 function renderizarHistoricoDelivery() {
