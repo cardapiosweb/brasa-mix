@@ -425,7 +425,7 @@ function aplicarModoMesa() {
 // ===========================
 let cart = []
 let tipoEntrega = "entrega"
-let tipoPagamento = "Pix"
+let tipoPagamento = null // null = cliente ainda não escolheu — obrigatório antes de finalizar
 
 // ===========================
 // MODO DARK
@@ -594,6 +594,33 @@ function selecionarPagamento(tipo) {
     document.getElementById("pag-pix").classList.toggle("selected", tipo === "Pix")
     document.getElementById("pag-dinheiro").classList.toggle("selected", tipo === "Dinheiro")
     document.getElementById("pag-cartao").classList.toggle("selected", tipo === "Cartão na entrega")
+
+    // Some com o aviso assim que o cliente escolhe uma opção
+    const erroPagamento = document.getElementById("pagamento-erro")
+    if (erroPagamento) erroPagamento.classList.add("hidden")
+}
+
+// Valida se o cliente já escolheu uma forma de pagamento. Só se aplica
+// ao fluxo delivery/retirada — no modo mesa a conta fecha com o garçom,
+// então essa etapa nem aparece (ver aplicarModoMesa).
+function validarFormaPagamento() {
+    if (modoMesa) return true
+
+    const erroPagamento = document.getElementById("pagamento-erro")
+    if (!tipoPagamento) {
+        if (erroPagamento) erroPagamento.classList.remove("hidden")
+        Toastify({
+            text: "Escolha uma forma de pagamento antes de finalizar.",
+            duration: 2500,
+            gravity: "top",
+            position: "right",
+            style: { background: "#ef4444", borderRadius: "8px" },
+        }).showToast()
+        return false
+    }
+
+    if (erroPagamento) erroPagamento.classList.add("hidden")
+    return true
 }
 
 
@@ -1141,6 +1168,11 @@ checkoutBtn.addEventListener("click", async function () {
         return
     }
 
+    if (!validarFormaPagamento()) {
+        document.getElementById("payment-section")?.scrollIntoView({ behavior: "smooth", block: "center" })
+        return
+    }
+
     checkoutBtn.disabled = true
 
     try {
@@ -1256,9 +1288,11 @@ checkoutBtn.addEventListener("click", async function () {
 
         cart = []
         tipoEntrega = "entrega"
-        tipoPagamento = "Pix"
+        tipoPagamento = null
         selecionarEntrega("entrega")
-        selecionarPagamento("Pix")
+        document.getElementById("pag-pix")?.classList.remove("selected")
+        document.getElementById("pag-dinheiro")?.classList.remove("selected")
+        document.getElementById("pag-cartao")?.classList.remove("selected")
         addressRua.value = ""
         addressNumero.value = ""
         addressBairro.value = ""

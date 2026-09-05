@@ -2429,7 +2429,7 @@
             <div id="payment-section">
                 <p class="font-bold mt-4 mb-2">Forma de pagamento:</p>
                 <div class="flex gap-3 mb-3">
-                    <div class="delivery-option selected" id="pag-pix" onclick="selecionarPagamento('Pix')">
+                    <div class="delivery-option" id="pag-pix" onclick="selecionarPagamento('Pix')">
                         <i class="fa fa-qrcode mb-1 block text-xl"></i>
                         Pix
                     </div>
@@ -2442,6 +2442,7 @@
                         Cartão
                     </div>
                 </div>
+                <p class="text-red-500 hidden text-sm mt-1" id="pagamento-erro">Escolha uma forma de pagamento.</p>
             </div>
 
             <div class="flex items-center justify-between mt-5 w-full">
