@@ -840,6 +840,37 @@
         }
         .product-modal-back:hover { color: var(--laranja); }
 
+        /* Botão fechar no canto superior esquerdo do modal do carrinho —
+           mesmo padrão visual do "Voltar" dos outros modais, mas
+           posicionado sobre o conteúdo (não empurra o título). */
+        #cart-modal > div {
+            position: relative;
+        }
+        .cart-modal-close {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            color: var(--carvao-suave);
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .cart-modal-close:hover {
+            background-color: rgba(0,0,0,0.06);
+            color: var(--laranja);
+        }
+        body.dark .cart-modal-close:hover {
+            background-color: rgba(255,255,255,0.08);
+        }
+
         .product-modal-gallery {
             display: flex;
             gap: 8px;
@@ -2375,6 +2406,9 @@
     <!-- MODAL CART -->
     <div class="bg-black/50 w-full h-full fixed top-0 left-0 z-[99] items-center justify-center hidden" id="cart-modal">
         <div class="bg-white p-5 rounded-md w-[90%] md:w-[600px] max-h-[90vh] overflow-y-auto">
+            <button type="button" class="cart-modal-close" id="cart-modal-close-btn" title="Fechar" aria-label="Fechar">
+                <i class="fa fa-arrow-left"></i>
+            </button>
             <h2 class="text-center font-bold text-2xl mb-4">Meu pedido</h2>
 
             <div id="cart-items" class="flex justify-between mb-2 flex-col"></div>

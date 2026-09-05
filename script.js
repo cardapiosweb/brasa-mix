@@ -482,6 +482,10 @@ closeModalBtn.addEventListener("click", function () {
     fecharModalCarrinho()
 })
 
+document.getElementById("cart-modal-close-btn")?.addEventListener("click", function () {
+    fecharModalCarrinho()
+})
+
 
 // ===========================
 // ENTREGA OU RETIRADA
