@@ -1995,6 +1995,28 @@
         body.apresentacao-ativa .topo-flutuante {
             display: none !important;
         }
+
+        /* ===== Reflexo de luz no topo (efeito "liquid glass") ===== */
+        .cart-flutuante::before,
+        #dark-toggle::before,
+        .hero-cta-primaria::before,
+        .hero-cta-secundaria::before,
+        .selo-confianca-flutuante::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.25), rgba(255,255,255,0));
+            pointer-events: none;
+            border-radius: inherit;
+        }
+        .cart-flutuante,
+        #dark-toggle {
+            position: fixed;
+            overflow: hidden;
+        }
     </style>
 </head>
 
