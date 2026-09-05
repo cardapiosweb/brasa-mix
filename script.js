@@ -42,6 +42,20 @@ function escaparHtml(valor) {
 }
 
 // ===========================
+// "ESGOTADO": manual x automático
+// Um produto aparece esgotado pro cliente se o lojista marcou
+// manualmente no cadastro (produto.esgotado) OU se o estoque
+// controlado numericamente chegou a zero — sem misturar as duas
+// coisas na mesma coluna do banco. Isso evita que o ajuste
+// automático de estoque (baixa/devolução) desmarque sem querer um
+// "Esgotado" que o lojista definiu de propósito.
+// ===========================
+function produtoEstaEsgotado(produto) {
+    const estoqueZerado = produto.estoque !== null && produto.estoque !== undefined && produto.estoque <= 0
+    return !!produto.esgotado || estoqueZerado
+}
+
+// ===========================
 // HORÁRIO DE HOJE — texto exibido no site + verificação de aberto/fechado
 // Trabalha em minutos desde a meia-noite pra suportar tanto o formato
 // antigo (hora cheia, número) quanto o novo ("HH:MM", com minutos).
@@ -111,6 +125,12 @@ function aplicarDadosDaLoja() {
     // cai pro texto manual antigo — não quebra clientes já no ar.
     document.getElementById("loja-horario").textContent = textoHorarioHoje(loja.horario) || loja.textoHorario
     document.getElementById("titulo-secao-menu").textContent = loja.tituloSecaoMenu
+
+    if (loja.seloConfianca) {
+        document.getElementById("selo-confianca-texto").textContent = loja.seloConfianca
+        document.getElementById("selo-confianca-sub").textContent = loja.seloConfiancaSub || ""
+        document.getElementById("selo-confianca").style.display = "flex"
+    }
 
     document.getElementById("whats-flutuante").href = `https://wa.me/${loja.whatsapp}`
 
@@ -263,7 +283,7 @@ function renderizarProdutos() {
 
 function criarCardProduto(produto) {
     const precoFormatado = produto.preco.toFixed(2).replace(".", ",")
-    const esgotado = !!produto.esgotado
+    const esgotado = produtoEstaEsgotado(produto)
     const semSetas = !!produto.esconder_setas
     const esconderPreco = semSetas && produto.preco === 0
     const badgeOferta = produto.oferta ? `<span class="badge-oferta">Oferta</span>` : ""
@@ -973,8 +993,6 @@ async function ajustarEstoqueComRetentativa(cliente, produtoId, delta, maxTentat
         const estoqueLido = prod.estoque
         const novoEstoque = Math.max(0, estoqueLido + delta)
         const atualizacao = { estoque: novoEstoque }
-        if (novoEstoque === 0) atualizacao.esgotado = true
-        if (delta > 0 && novoEstoque > 0) atualizacao.esgotado = false
 
         const { data: linhasAfetadas, error: erroUpdate } = await cliente
             .from("produtos")
@@ -1009,12 +1027,13 @@ async function baixarEstoque(itensCarrinho) {
             const resultado = await ajustarEstoqueComRetentativa(supabaseClient, item.id, -item.quantity)
             if (!resultado.sucesso) continue
 
-            // Mantém o array local em sincronia pro resto da sessão
+            // Mantém o array local em sincronia pro resto da sessão. O
+            // status "esgotado" nunca é mexido aqui — ele é sempre
+            // CALCULADO a partir do estoque (produtoEstaEsgotado), então
+            // isso nunca mais sobrescreve um "Esgotado" marcado de
+            // propósito pelo lojista no cadastro.
             const produtoLocal = produtos.find(p => String(p.id) === String(item.id))
-            if (produtoLocal) {
-                produtoLocal.estoque = resultado.novoEstoque
-                if (resultado.novoEstoque === 0) produtoLocal.esgotado = true
-            }
+            if (produtoLocal) produtoLocal.estoque = resultado.novoEstoque
         } catch (err) {
             console.error("Erro ao baixar estoque do produto", item.id, err)
         }
@@ -1306,7 +1325,7 @@ function abrirProduto(produto) {
 
     document.getElementById("modal-qty-selector").setAttribute("data-qty", "1")
     document.getElementById("modal-qty-value").textContent = "1"
-    document.getElementById("modal-qty-selector").style.display = produto.esconder_setas ? "none" : "flex"
+    document.getElementById("modal-qty-selector").style.display = (produto.esconder_setas || produtoEstaEsgotado(produto)) ? "none" : "flex"
 
     const modalJaAberto = document.getElementById("product-modal").classList.contains("open")
 
@@ -1338,7 +1357,7 @@ function abrirProduto(produto) {
     renderizarOpcoesProduto(produto)
 
     const modalAddBtn = document.getElementById("modal-add-btn")
-    if (produto.esgotado) {
+    if (produtoEstaEsgotado(produto)) {
         modalAddBtn.classList.add("esgotado-btn")
         modalAddBtn.innerHTML = `<i class="fa fa-ban"></i> Esgotado`
         modalAddBtn.onclick = function () {

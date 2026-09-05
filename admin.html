@@ -77,6 +77,35 @@
     }
     .btn-topo-icone .bolinha-notif.visivel{display:block;}
 
+    /* ===== Painel de notificações (sino) ===== */
+    #overlay-notif{
+        display:none;position:fixed;inset:0;background:rgba(36,27,22,.5);z-index:115;
+    }
+    #overlay-notif.aberto{display:block;}
+    .painel-notif{
+        position:fixed;top:0;right:0;height:100%;width:min(320px, 88vw);
+        background:white;z-index:120;box-shadow:-6px 0 24px rgba(0,0,0,.18);
+        transform:translateX(100%);transition:transform .25s ease;
+        display:flex;flex-direction:column;
+    }
+    .painel-notif.aberto{transform:translateX(0);}
+    .painel-notif-topo{
+        display:flex;align-items:center;justify-content:space-between;
+        padding:18px 16px 14px;border-bottom:1px solid var(--linha);flex-shrink:0;
+    }
+    .painel-notif-topo h3{font-size:16px;}
+    .painel-notif-topo button{background:none;border:none;font-size:17px;color:#8a7361;width:32px;height:32px;border-radius:8px;}
+    .painel-notif-topo button:hover{background:var(--creme);}
+    #lista-notif{flex:1;overflow-y:auto;padding:8px 10px;}
+    .notif-item{
+        display:flex;flex-direction:column;gap:2px;text-align:left;width:100%;
+        background:none;border:none;border-radius:10px;padding:11px 10px;margin-bottom:2px;
+    }
+    .notif-item:hover{background:var(--creme);}
+    .notif-item .notif-texto{font-size:13.5px;font-weight:700;color:var(--carvao);}
+    .notif-item .notif-hora{font-size:11.5px;color:#8a7361;}
+    .notif-vazio{color:#8a7361;font-size:13.5px;text-align:center;padding:40px 16px;}
+
     /* Bolinha de aviso nos itens de nav/menu (Mesas, Garçom, Delivery) */
     .nav-item .bolinha,
     .menu-item .bolinha{
@@ -654,6 +683,14 @@
                         <label>Chave Pix (deixe em branco pra não mostrar essa opção)</label>
                         <input id="loja-chave-pix" placeholder="Ex: 00.000.000/0000-00" />
                     </div>
+                    <div class="campo">
+                        <label>Selo de confiança — destaque (deixe em branco pra não mostrar)</label>
+                        <input id="loja-selo-confianca" placeholder="Ex: +500 pedidos" maxlength="30" />
+                    </div>
+                    <div class="campo">
+                        <label>Selo de confiança — legenda</label>
+                        <input id="loja-selo-confianca-sub" placeholder="Ex: entregues este mês" maxlength="40" />
+                    </div>
                 </div>
                 <div class="grid2">
                     <div class="campo">
@@ -830,6 +867,17 @@ function escaparHtml(valor) {
     const div = document.createElement("div")
     div.textContent = valor === null || valor === undefined ? "" : String(valor)
     return div.innerHTML
+}
+
+// ===========================
+// "ESGOTADO": manual x automático
+// Um produto aparece esgotado se o lojista marcou manualmente no
+// cadastro (produto.esgotado) OU se o estoque controlado numericamente
+// chegou a zero — sem misturar as duas coisas na mesma coluna do banco.
+// ===========================
+function produtoEstaEsgotado(produto) {
+    const estoqueZerado = produto.estoque !== null && produto.estoque !== undefined && produto.estoque <= 0
+    return !!produto.esgotado || estoqueZerado
 }
 
 // ============================================================
@@ -1302,6 +1350,8 @@ function preencherFormularioLoja() {
     document.getElementById("loja-endereco").value = lojaAtual.endereco || ""
     document.getElementById("loja-titulo-menu").value = lojaAtual.titulo_secao_menu || ""
     document.getElementById("loja-chave-pix").value = lojaAtual.chave_pix || ""
+    document.getElementById("loja-selo-confianca").value = lojaAtual.selo_confianca || ""
+    document.getElementById("loja-selo-confianca-sub").value = lojaAtual.selo_confianca_sub || ""
     document.getElementById("loja-logo").value = lojaAtual.logo_url || ""
     document.getElementById("loja-banner").value = lojaAtual.banner_url || ""
     document.getElementById("loja-logo-preview").src = lojaAtual.logo_url || ""
@@ -1332,6 +1382,8 @@ document.getElementById("btn-salvar-loja").addEventListener("click", async () =>
         endereco: document.getElementById("loja-endereco").value.trim(),
         titulo_secao_menu: document.getElementById("loja-titulo-menu").value.trim(),
         chave_pix: document.getElementById("loja-chave-pix").value.trim(),
+        selo_confianca: document.getElementById("loja-selo-confianca").value.trim() || null,
+        selo_confianca_sub: document.getElementById("loja-selo-confianca-sub").value.trim() || null,
         logo_url: document.getElementById("loja-logo").value.trim(),
         banner_url: document.getElementById("loja-banner").value.trim(),
         cor_principal: document.getElementById("loja-usar-cor-personalizada").checked
@@ -1698,7 +1750,7 @@ function renderizarListaProdutos() {
                 </div>` : ""}
                 <img src="${escaparHtml((p.fotos && p.fotos[0]) || '')}" onerror="this.style.background='#eee'" />
                 <div class="info">
-                    <strong>${escaparHtml(p.nome)} ${p.oferta ? '<span class="tag tag-oferta">Oferta</span>' : ''} ${p.esgotado ? '<span class="tag tag-esgotado">Esgotado</span>' : ''} ${p.retirada_apenas ? '<span class="tag tag-retirada">Só retirada</span>' : ''} ${(p.estoque !== null && p.estoque !== undefined) ? `<span class="tag" style="background:#8a7361;color:white;">Estoque: ${escaparHtml(p.estoque)}</span>` : ''}</strong>
+                    <strong>${escaparHtml(p.nome)} ${p.oferta ? '<span class="tag tag-oferta">Oferta</span>' : ''} ${produtoEstaEsgotado(p) ? '<span class="tag tag-esgotado">Esgotado</span>' : ''} ${p.retirada_apenas ? '<span class="tag tag-retirada">Só retirada</span>' : ''} ${(p.estoque !== null && p.estoque !== undefined) ? `<span class="tag" style="background:#8a7361;color:white;">Estoque: ${escaparHtml(p.estoque)}</span>` : ''}</strong>
                     <span>R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</span>
                 </div>
                 <div class="produto-acoes">
@@ -2025,6 +2077,83 @@ async function carregarModoGarcom() {
 }
 
 // ============================================================
+// NOTIFICAÇÕES (sino no cabeçalho)
+// Lista em memória (não persiste no banco) — resumo do que aconteceu
+// desde que o painel foi aberto. Alimentada pelos mesmos listeners de
+// realtime que já acendiam as bolinhas nas abas. Limitada a 20 itens.
+// ============================================================
+const notificacoesRecentes = []
+
+function adicionarNotificacao(texto, aba, mesa) {
+    notificacoesRecentes.unshift({
+        texto,
+        aba,
+        mesa: mesa || null,
+        hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+    })
+    if (notificacoesRecentes.length > 20) notificacoesRecentes.pop()
+
+    document.getElementById("bolinha-notif").classList.add("visivel")
+    renderizarNotificacoes()
+}
+
+function limparBolinhaNotif() {
+    document.getElementById("bolinha-notif").classList.remove("visivel")
+}
+
+function renderizarNotificacoes() {
+    const lista = document.getElementById("lista-notif")
+    lista.innerHTML = ""
+
+    if (!notificacoesRecentes.length) {
+        lista.innerHTML = `<p class="notif-vazio">Nenhuma notificação ainda nesta sessão.</p>`
+        return
+    }
+
+    notificacoesRecentes.forEach((n, i) => {
+        const item = document.createElement("button")
+        item.type = "button"
+        item.className = "notif-item"
+        item.innerHTML = `
+            <span class="notif-texto">${escaparHtml(n.texto)}</span>
+            <span class="notif-hora">${n.hora}</span>
+        `
+        item.addEventListener("click", () => {
+            fecharPainelNotif()
+            irParaAba(n.aba)
+            if (n.mesa && n.aba === "garcom") {
+                setTimeout(() => {
+                    const quadrado = [...document.querySelectorAll(".garcom-mesa .garcom-mesa-numero")]
+                        .find(el => el.textContent.trim() === `Mesa ${n.mesa}`)
+                    if (quadrado) quadrado.closest(".garcom-mesa").click()
+                }, 300)
+            }
+        })
+        lista.appendChild(item)
+    })
+}
+
+// ---- Abrir/fechar o painel de notificações (sino) ----
+const painelNotif = document.getElementById("painel-notif")
+const overlayNotif = document.getElementById("overlay-notif")
+
+function abrirPainelNotif() {
+    renderizarNotificacoes()
+    painelNotif.classList.add("aberto")
+    overlayNotif.classList.add("aberto")
+    limparBolinhaNotif()
+}
+
+function fecharPainelNotif() {
+    painelNotif.classList.remove("aberto")
+    overlayNotif.classList.remove("aberto")
+}
+
+document.getElementById("btn-sino").addEventListener("click", abrirPainelNotif)
+document.getElementById("btn-fechar-notif").addEventListener("click", fecharPainelNotif)
+overlayNotif.addEventListener("click", fecharPainelNotif)
+
+// ============================================================
 // MODAL DE AÇÕES DA MESA (Modo Garçom)
 // ============================================================
 function abrirModalGarcom(mesa, pedidos) {
@@ -2161,29 +2290,60 @@ async function finalizarMesa(mesa, btnFinalizar) {
 }
 
 // ============================================================
+// AJUSTE DE ESTOQUE SEM CONDIÇÃO DE CORRIDA
+// Mesma lógica usada no site público (script.js): o update só é
+// aceito se o estoque no banco ainda for o mesmo valor lido; se
+// outro pedido escreveu no meio do caminho, tenta de novo com o
+// valor mais recente, até um limite de tentativas.
+// ============================================================
+async function ajustarEstoqueComRetentativa(cliente, produtoId, delta, maxTentativas = 5) {
+    for (let tentativa = 0; tentativa < maxTentativas; tentativa++) {
+        const { data: prod, error: erroBusca } = await cliente
+            .from("produtos")
+            .select("estoque")
+            .eq("id", produtoId)
+            .single()
+
+        if (erroBusca || !prod || prod.estoque === null || prod.estoque === undefined) {
+            return { sucesso: false }
+        }
+
+        const estoqueLido = prod.estoque
+        const novoEstoque = Math.max(0, estoqueLido + delta)
+        const atualizacao = { estoque: novoEstoque }
+
+        const { data: linhasAfetadas, error: erroUpdate } = await cliente
+            .from("produtos")
+            .update(atualizacao)
+            .eq("id", produtoId)
+            .eq("estoque", estoqueLido)
+            .select("id")
+
+        if (!erroUpdate && linhasAfetadas && linhasAfetadas.length > 0) {
+            return { sucesso: true, novoEstoque }
+        }
+
+        await new Promise(r => setTimeout(r, 80 + Math.random() * 120))
+    }
+
+    console.error("Não foi possível ajustar o estoque do produto após várias tentativas (concorrência alta)", produtoId)
+    return { sucesso: false }
+}
+
+// ============================================================
 // DEVOLVER ESTOQUE
 // Usado quando um pedido de mesa é cancelado antes da comanda
 // fechar — o estoque já tinha sido descontado no momento do pedido
-// (script.js), então cancelar precisa devolver essa quantidade. Se
-// o produto ficou marcado "esgotado" por causa desse desconto,
-// desmarca automaticamente ao devolver.
+// (script.js), então cancelar precisa devolver essa quantidade. O
+// status de "esgotado" nunca é mexido aqui — ele é sempre CALCULADO
+// a partir do estoque (produtoEstaEsgotado), então isso nunca mais
+// desmarca um "Esgotado" que o lojista marcou de propósito no
+// cadastro do produto.
 // ============================================================
 async function devolverEstoque(quantidadesPorProduto, cliente) {
     const tarefas = Object.entries(quantidadesPorProduto).map(async ([id, qtd]) => {
         try {
-            const { data: prod, error: erroBusca } = await cliente
-                .from("produtos")
-                .select("estoque, esgotado")
-                .eq("id", id)
-                .single()
-
-            if (erroBusca || !prod || prod.estoque === null || prod.estoque === undefined) return
-
-            const novoEstoque = prod.estoque + qtd
-            const atualizacao = { estoque: novoEstoque }
-            if (prod.esgotado && novoEstoque > 0) atualizacao.esgotado = false
-
-            await cliente.from("produtos").update(atualizacao).eq("id", id)
+            await ajustarEstoqueComRetentativa(cliente, id, qtd)
         } catch (err) {
             console.error("Erro ao devolver estoque do produto", id, err)
         }
@@ -2340,6 +2500,8 @@ function inscreverAtualizacoesMesas() {
                     document.getElementById("bolinha-garcom").classList.add("visivel")
                     if (mesaDoPedido) mesasComPedidoNovo.add(String(mesaDoPedido))
                 }
+
+                adicionarNotificacao(`Novo pedido — Mesa ${mesaDoPedido}`, "garcom", mesaDoPedido)
             }
         )
         .subscribe()
@@ -2362,6 +2524,8 @@ function inscreverAtualizacoesHistoricoDelivery() {
                 } else {
                     document.getElementById("bolinha-historico-delivery").classList.add("visivel")
                 }
+
+                adicionarNotificacao("Novo pedido — Delivery", "historico-delivery")
             }
         )
         .subscribe()
