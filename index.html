@@ -1203,7 +1203,9 @@
         }
         #date-span {
             border: 1.5px solid var(--laranja);
-            background: rgba(36,27,22,0.55);
+            background: rgba(36,27,22,0.4);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
         #date-span span {
             text-shadow: 0 1px 3px rgba(0,0,0,0.5);
@@ -1212,10 +1214,13 @@
         .status-loja-pill{
             display:flex;align-items:center;gap:6px;
             padding:5px 12px;border-radius:999px;font-size:13px;font-weight:700;
-            background:rgba(76,107,63,0.18);color:#8FD19E;border:1.5px solid rgba(143,209,158,0.5);
+            background:rgba(76,107,63,0.22);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color:#8FD19E;border:1.5px solid rgba(143,209,158,0.5);
         }
         .status-loja-pill.fechada{
-            background:rgba(179,38,30,0.18);color:#F3A7A1;border-color:rgba(243,167,161,0.5);
+            background:rgba(179,38,30,0.22);color:#F3A7A1;border-color:rgba(243,167,161,0.5);
         }
 
         .selo-confianca-flutuante {
@@ -1294,15 +1299,24 @@
             border: none;
         }
         .hero-cta-primaria {
-            background: var(--laranja);
+            background: rgba(169,50,30,0.55);
+            backdrop-filter: blur(var(--vidro-blur)) saturate(160%);
+            -webkit-backdrop-filter: blur(var(--vidro-blur)) saturate(160%);
+            border: 1px solid rgba(255,255,255,0.35);
             color: white;
             box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+            position: relative;
+            overflow: hidden;
         }
-        .hero-cta-primaria:hover { background: var(--laranja-escuro); transform: translateY(-2px); }
+        .hero-cta-primaria:hover { background: rgba(122,36,22,0.65); transform: translateY(-2px); }
         .hero-cta-secundaria {
             background: rgba(251,243,228,0.12);
+            backdrop-filter: blur(var(--vidro-blur));
+            -webkit-backdrop-filter: blur(var(--vidro-blur));
             color: var(--creme);
             border: 1.5px solid rgba(251,243,228,0.5);
+            position: relative;
+            overflow: hidden;
         }
         .hero-cta-secundaria:hover { background: rgba(251,243,228,0.22); transform: translateY(-2px); }
 
@@ -1427,11 +1441,17 @@
             .diferenciais-grid { grid-template-columns: repeat(2, 1fr); }
         }
         .diferencial-card {
-            border: 1.5px solid var(--linha);
+            border: 1px solid rgba(255,255,255,0.5);
             border-radius: 14px;
             padding: 18px 16px;
-            background: white;
+            background: rgba(255,255,255,0.45);
+            backdrop-filter: blur(14px) saturate(160%);
+            -webkit-backdrop-filter: blur(14px) saturate(160%);
             text-align: left;
+        }
+        body.dark .diferencial-card {
+            background: rgba(36,27,22,0.45);
+            border-color: rgba(255,255,255,0.08);
         }
         .diferencial-icone {
             width: 38px;
