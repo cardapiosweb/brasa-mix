@@ -46,6 +46,11 @@
             --verde-manjericao: #4C6B3F;
             --linha: #E4D5B7;
 
+            --vidro-bg: rgba(255,255,255,0.55);
+            --vidro-bg-escuro: rgba(36,27,22,0.45);
+            --vidro-borda: rgba(255,255,255,0.35);
+            --vidro-blur: 16px;
+
             --fonte-titulo: 'Bitter', serif;
             --fonte-texto: 'Mulish', sans-serif;
             --fonte-script: 'Caveat', cursive;
@@ -197,6 +202,20 @@
         #menu img.product-clickable {
             border-radius: 12px;
             box-shadow: 0 3px 0 rgba(36,27,22,0.12);
+        }
+
+        /* Card de vidro por trás de cada produto da lista */
+        #menu .flex.gap-6 {
+            background: rgba(255,255,255,0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.5);
+            border-radius: 16px;
+            padding: 12px;
+        }
+        body.dark #menu .flex.gap-6 {
+            background: rgba(36,27,22,0.4);
+            border-color: rgba(255,255,255,0.08);
         }
 
         /* Cardápio: sempre 2 colunas, mesmo abaixo do breakpoint "md"
@@ -394,7 +413,9 @@
             border-radius: 999px;
             border: 1.5px solid var(--laranja);
             color: var(--laranja);
-            background: var(--creme);
+            background: rgba(251,243,228,0.55);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             font-weight: 600;
             font-size: 14px;
             cursor: pointer;
@@ -481,7 +502,9 @@
         /* Toggle Entrega/Retirada em formato pill (segmented control) */
         .toggle-entrega-retirada {
             display: flex;
-            background: var(--linha);
+            background: rgba(228,213,183,0.5);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             border-radius: 999px;
             padding: 4px;
             gap: 4px;
@@ -542,12 +565,14 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            border: 1.5px solid var(--linha);
+            border: 1.5px solid rgba(255,255,255,0.6);
             border-radius: 12px;
             padding: 12px 14px;
             margin: 10px 0 16px;
             cursor: pointer;
-            background: white;
+            background: rgba(255,255,255,0.5);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             transition: border-color 0.2s;
         }
         .endereco-card:hover { border-color: var(--laranja); }
@@ -594,7 +619,9 @@
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(36,27,22,0.7);
+            background: rgba(36,27,22,0.55);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
             z-index: 212;
             align-items: center;
             justify-content: center;
@@ -636,17 +663,31 @@
         body.dark .modal-observacao-wrap textarea { background-color: #171210; color: #F3E9DA; border-color: #3A2C24; }
 
         /* Modal do carrinho */
+        #cart-modal {
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        }
         #cart-modal > div {
+            background: var(--vidro-bg);
+            backdrop-filter: blur(20px) saturate(160%);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
+            border: 1px solid rgba(255,255,255,0.55);
             overflow-y: auto;
             max-height: 90vh;
             border-radius: 16px;   
+        }
+        body.dark #cart-modal > div {
+            background: var(--vidro-bg-escuro);
+            border-color: rgba(255,255,255,0.08);
         }
 
         #options-modal {
         display: none;
         position: fixed;
         inset: 0;
-        background: rgba(36,27,22,0.7);
+        background: rgba(36,27,22,0.55);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
         z-index: 210;
         align-items: center;
         justify-content: center;
@@ -658,7 +699,9 @@
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(36,27,22,0.7);
+            background: rgba(36,27,22,0.55);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
             z-index: 215;
             align-items: center;
             justify-content: center;
@@ -668,7 +711,10 @@
         body.dark #pix-chave-box { background: #171210; border-color: #3A2C24; }
         body.dark #pix-modal p[style*="laranja-claro"] { background: #241B16; border-color: #3A2C24; color: #C9B79E; }
         .options-modal-box {
-            background: var(--creme);
+            background: var(--vidro-bg);
+            backdrop-filter: blur(20px) saturate(160%);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
+            border: 1px solid rgba(255,255,255,0.55);
             border-radius: 16px;
             width: 90%;
             max-width: 480px;
@@ -729,14 +775,19 @@
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(36,27,22,0.7);
+            background: rgba(36,27,22,0.55);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
             z-index: 200;
             align-items: center;
             justify-content: center;
         }
         #product-modal.open { display: flex; }
         .product-modal-box {
-            background: var(--creme);
+            background: var(--vidro-bg);
+            backdrop-filter: blur(20px) saturate(160%);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
+            border: 1px solid rgba(255,255,255,0.55);
             border-radius: 16px;
             width: 90%;
             max-width: 480px;
@@ -898,9 +949,11 @@
             top: 16px;
             left: 16px;
             z-index: 50;
-            background: rgba(36,27,22,0.6);
+            background: var(--vidro-bg-escuro);
+            backdrop-filter: blur(var(--vidro-blur)) saturate(150%);
+            -webkit-backdrop-filter: blur(var(--vidro-blur)) saturate(150%);
+            border: 1px solid var(--vidro-borda);
             color: white;
-            border: none;
             border-radius: 20px;
             padding: 8px 14px;
             cursor: pointer;
@@ -911,7 +964,7 @@
             font-weight: bold;
             transition: background 0.2s;
         }
-        #dark-toggle:hover { background: rgba(36,27,22,0.85); }
+        #dark-toggle:hover { background: rgba(36,27,22,0.7); }
 
         /* ===== VOLTAR AO TOPO — logo abaixo do botão de tema ===== */
         .topo-flutuante {
@@ -919,9 +972,11 @@
             top: 68px;
             left: 16px;
             z-index: 49;
-            background: var(--laranja);
+            background: rgba(169,50,30,0.55);
+            backdrop-filter: blur(var(--vidro-blur));
+            -webkit-backdrop-filter: blur(var(--vidro-blur));
+            border: 1px solid var(--vidro-borda);
             color: white;
-            border: none;
             border-radius: 50%;
             width: 44px;
             height: 44px;
@@ -941,7 +996,7 @@
             transform: translateY(0);
             pointer-events: auto;
         }
-        .topo-flutuante:hover { background-color: var(--laranja-escuro); }
+        .topo-flutuante:hover { background-color: rgba(122,36,22,0.75); }
 
         /* ===== CARRINHO FLUTUANTE ===== */
         .cart-flutuante {
@@ -949,7 +1004,9 @@
             top: 16px;
             right: 16px;
             z-index: 55;
-            background: var(--carvao);
+            background: rgba(36,27,22,0.55);
+            backdrop-filter: blur(var(--vidro-blur)) saturate(160%);
+            -webkit-backdrop-filter: blur(var(--vidro-blur)) saturate(160%);
             color: var(--creme);
             border: 1.5px solid var(--laranja);
             border-radius: 999px;
@@ -989,9 +1046,11 @@
             top: 80px;
             right: 16px;
             z-index: 50;
-            background: #25D366;
+            background: rgba(37,211,102,0.82);
+            backdrop-filter: blur(var(--vidro-blur));
+            -webkit-backdrop-filter: blur(var(--vidro-blur));
+            border: 1px solid rgba(255,255,255,0.4);
             color: white;
-            border: none;
             border-radius: 50%;
             width: 52px;
             height: 52px;
@@ -1162,7 +1221,10 @@
         .selo-confianca-flutuante {
             position: relative;
             margin-top: 16px;
-            background: var(--creme);
+            background: var(--vidro-bg);
+            backdrop-filter: blur(var(--vidro-blur)) saturate(180%);
+            -webkit-backdrop-filter: blur(var(--vidro-blur)) saturate(180%);
+            border: 1px solid rgba(255,255,255,0.6);
             border-radius: 16px;
             padding: 10px 20px 10px 12px;
             display: flex;
