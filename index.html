@@ -493,6 +493,35 @@
             color: var(--laranja-escuro);
             font-weight: bold;
         }
+
+        /* Forma de pagamento (Pix/Dinheiro/Cartão): em telas estreitas,
+           reduz padding, ícone e fonte pra garantir que os 3 caibam
+           sempre lado a lado, sem quebrar linha. */
+        @media (max-width: 380px) {
+            #payment-section .flex.gap-3 {
+                gap: 6px;
+            }
+            #payment-section .delivery-option {
+                padding: 8px 4px;
+            }
+            #payment-section .delivery-option i {
+                font-size: 16px !important;
+                margin-bottom: 2px !important;
+            }
+            #payment-section .delivery-option {
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 340px) {
+            #payment-section .delivery-option {
+                padding: 7px 2px;
+                font-size: 11px;
+            }
+            #payment-section .delivery-option i {
+                font-size: 14px !important;
+            }
+        }
         body.dark .delivery-option {
             background-color: #2d2d2d;
             color: #ffffff;
