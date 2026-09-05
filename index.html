@@ -1703,10 +1703,270 @@
                 font-size: 11.5px;
             }
         }
+
+        /* ===== TELA DE APRESENTAÇÃO (splash inicial da loja) ===== */
+        #tela-apresentacao {
+            position: fixed;
+            inset: 0;
+            z-index: 300;
+            background: var(--carvao);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 20px;
+            overflow-y: auto;
+        }
+        .apresentacao-fundo {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            z-index: 0;
+        }
+        #tela-apresentacao::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            background:
+                linear-gradient(to bottom, rgba(23,18,16,0.55) 0%, rgba(23,18,16,0.45) 35%, rgba(23,18,16,0.88) 78%, rgba(23,18,16,0.97) 100%),
+                radial-gradient(circle at 15% 15%, rgba(217,164,65,0.16) 0, transparent 45%);
+        }
+        .apresentacao-conteudo {
+            position: relative;
+            z-index: 2;
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .apresentacao-selo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.14);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.25);
+            color: var(--dourado);
+            padding: 8px 18px;
+            border-radius: 999px;
+            font-size: 12.5px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        .apresentacao-selo i { font-size: 12px; }
+        .apresentacao-selo span { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.25; }
+        .apresentacao-selo small { color: #F3E9DA; font-weight: 600; font-size: 11px; }
+        .apresentacao-logo {
+            width: 108px;
+            height: 108px;
+            border-radius: 50%;
+            background: var(--creme);
+            border: 4px solid var(--laranja);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            margin-bottom: 18px;
+        }
+        .apresentacao-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        #apresentacao-nome {
+            font-family: var(--fonte-titulo);
+            font-size: clamp(22px, 6vw, 30px);
+            font-weight: 800;
+            color: var(--creme);
+            margin: 0 0 6px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+        }
+        #apresentacao-tagline {
+            font-family: var(--fonte-script);
+            font-size: 19px;
+            font-weight: 700;
+            color: var(--dourado);
+            margin: 0 0 14px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+        }
+        #apresentacao-descricao {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #E4D5C4;
+            margin: 0 0 26px;
+        }
+        #apresentacao-descricao:empty {
+            display: none;
+        }
+        .apresentacao-botoes {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+        .apresentacao-btn-primario,
+        .apresentacao-btn-secundario {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 22px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 15px;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        .apresentacao-btn-primario {
+            background: var(--laranja);
+            color: white;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+        }
+        .apresentacao-btn-primario:hover { background: var(--laranja-escuro); transform: translateY(-2px); }
+        .apresentacao-btn-secundario {
+            background: #25D366;
+            color: white;
+        }
+        .apresentacao-btn-secundario:hover { transform: translateY(-2px); }
+
+        /* Passos "Como funciona" — cartões de vidro sobre a foto de fundo */
+        .apresentacao-passos {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+            margin-top: 30px;
+        }
+        .apresentacao-passo-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-align: left;
+            background: rgba(255,255,255,0.10);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 16px;
+            padding: 12px 14px;
+            box-shadow: 0 8px 22px rgba(0,0,0,0.25);
+        }
+        .apresentacao-passo-icone {
+            width: 38px;
+            height: 38px;
+            border-radius: 11px;
+            background: rgba(255,255,255,0.16);
+            color: var(--dourado);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+        .apresentacao-passo-titulo {
+            font-weight: 800;
+            font-size: 13.5px;
+            color: white;
+            margin: 0;
+        }
+        .apresentacao-passo-desc {
+            font-size: 11.5px;
+            color: rgba(255,255,255,0.75);
+            margin: 2px 0 0;
+            line-height: 1.35;
+        }
+
+        /* Splash em telas pequenas (iPhone 5, Galaxy S20 etc.) — reduz
+           logo, textos e respiro pra caber tudo sem cortar/sobrepor.
+           align-items:flex-start evita que a parte de cima corte quando
+           o conteúdo é mais alto que a tela disponível. */
+        @media (max-width: 360px), (max-height: 600px) {
+            #tela-apresentacao {
+                align-items: flex-start;
+                padding: 44px 16px 24px;
+            }
+            .apresentacao-selo { padding: 6px 14px; font-size: 11px; margin-bottom: 12px; }
+            .apresentacao-logo { width: 76px; height: 76px; border-width: 3px; margin-bottom: 10px; }
+            #apresentacao-nome { font-size: clamp(18px, 6vw, 24px); margin-bottom: 4px; }
+            #apresentacao-tagline { font-size: 15px; margin-bottom: 8px; }
+            #apresentacao-descricao { font-size: 12.5px; margin-bottom: 14px; }
+            .apresentacao-btn-primario,
+            .apresentacao-btn-secundario { padding: 11px 18px; font-size: 13.5px; }
+            .apresentacao-passos { margin-top: 16px; gap: 8px; }
+            .apresentacao-passo-card { padding: 9px 11px; gap: 9px; }
+            .apresentacao-passo-icone { width: 30px; height: 30px; font-size: 12px; border-radius: 9px; }
+            .apresentacao-passo-titulo { font-size: 12px; }
+            .apresentacao-passo-desc { font-size: 10.5px; }
+        }
+
+        body.apresentacao-ativa {
+            overflow: hidden;
+        }
+        body.apresentacao-ativa #dark-toggle,
+        body.apresentacao-ativa .cart-flutuante,
+        body.apresentacao-ativa #whats-flutuante,
+        body.apresentacao-ativa .topo-flutuante {
+            display: none !important;
+        }
     </style>
 </head>
 
-<body class="pb-16">
+<body class="pb-16 apresentacao-ativa">
+
+    <!-- ===== TELA DE APRESENTAÇÃO (splash inicial) ===== -->
+    <div id="tela-apresentacao">
+        <div class="apresentacao-fundo" id="apresentacao-fundo"></div>
+        <div class="apresentacao-conteudo">
+            <div class="apresentacao-selo" id="apresentacao-selo" style="display:none;">
+                <i class="fa fa-star"></i>
+                <span>
+                    <strong id="apresentacao-selo-texto"></strong>
+                    <small id="apresentacao-selo-sub"></small>
+                </span>
+            </div>
+
+            <div class="apresentacao-logo">
+                <img id="apresentacao-logo-img" alt="" onerror="this.style.display='none'" />
+            </div>
+            <h1 id="apresentacao-nome"></h1>
+            <p id="apresentacao-tagline"></p>
+            <p id="apresentacao-descricao"></p>
+            <div class="apresentacao-botoes">
+                <button type="button" class="apresentacao-btn-primario" id="apresentacao-ver-cardapio">
+                    <i class="fa fa-drumstick-bite"></i> Ver cardápio completo
+                </button>
+            </div>
+
+            <div class="apresentacao-passos">
+                <div class="apresentacao-passo-card">
+                    <span class="apresentacao-passo-icone"><i class="fa fa-drumstick-bite"></i></span>
+                    <span class="apresentacao-passo-textos">
+                        <p class="apresentacao-passo-titulo">Monte seu pedido</p>
+                        <p class="apresentacao-passo-desc">Escolha os espetos e cortes no cardápio e adicione ao carrinho.</p>
+                    </span>
+                </div>
+                <div class="apresentacao-passo-card">
+                    <span class="apresentacao-passo-icone"><i class="fa fa-route"></i></span>
+                    <span class="apresentacao-passo-textos">
+                        <p class="apresentacao-passo-titulo">Escolha como receber</p>
+                        <p class="apresentacao-passo-desc">Entrega, retirada no balcão ou direto da sua mesa.</p>
+                    </span>
+                </div>
+                <div class="apresentacao-passo-card">
+                    <span class="apresentacao-passo-icone"><i class="fab fa-whatsapp"></i></span>
+                    <span class="apresentacao-passo-textos">
+                        <p class="apresentacao-passo-titulo">Confirme no WhatsApp</p>
+                        <p class="apresentacao-passo-desc">Seu pedido segue direto pra churrasqueira.</p>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <button id="dark-toggle" title="Alternar modo escuro">
         <i class="fa fa-moon" id="dark-icon"></i>
@@ -1780,34 +2040,6 @@
         </div>
     </header>
     <!-- FIM HEADER -->
-
-    <!-- ===== COMO FUNCIONA ===== -->
-    <section id="como-funciona">
-        <div class="secao-cabecalho">
-            <h2 class="secao-titulo">Como funciona</h2>
-            <p class="secao-subtitulo">Do cardápio até a sua mesa (ou a sua casa) em poucos passos.</p>
-        </div>
-        <div class="passos-grid">
-            <div class="passo-card">
-                <span class="passo-numero">01</span>
-                <span class="passo-icone"><i class="fa fa-drumstick-bite"></i></span>
-                <p class="passo-titulo">Monte seu pedido</p>
-                <p class="passo-desc">Escolha os espetos e cortes no cardápio abaixo e adicione ao carrinho na quantidade que quiser.</p>
-            </div>
-            <div class="passo-card">
-                <span class="passo-numero">02</span>
-                <span class="passo-icone"><i class="fa fa-route"></i></span>
-                <p class="passo-titulo">Escolha como receber</p>
-                <p class="passo-desc">Entrega no seu endereço, retirada no balcão ou direto da sua mesa, se estiver aqui com a gente.</p>
-            </div>
-            <div class="passo-card">
-                <span class="passo-numero">03</span>
-                <span class="passo-icone"><i class="fab fa-whatsapp"></i></span>
-                <p class="passo-titulo">Confirme no WhatsApp</p>
-                <p class="passo-desc">Seu pedido segue direto pra churrasqueira e a gente confirma tudo com você por lá.</p>
-            </div>
-        </div>
-    </section>
 
     <!-- ===== DIFERENCIAIS ===== -->
     <section id="diferenciais">

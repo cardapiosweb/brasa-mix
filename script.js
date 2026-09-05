@@ -92,7 +92,22 @@ function aplicarDadosDaLoja() {
     document.getElementById("loja-nome").textContent = loja.nome
     document.getElementById("loja-tagline").textContent = loja.tagline
     document.getElementById("loja-endereco").textContent = `Endereço: ${loja.endereco}`
-    // Se a loja ainda não tiver o horário estruturado configurado,
+
+    // Tela de apresentação (splash inicial) — reaproveita os mesmos
+    // dados do cabeçalho, sem precisar de campo novo nenhum no admin.
+    document.getElementById("apresentacao-logo-img").src = loja.logo
+    document.getElementById("apresentacao-logo-img").alt = `Logo ${loja.nome}`
+    document.getElementById("apresentacao-nome").textContent = loja.nome
+    document.getElementById("apresentacao-tagline").textContent = loja.tagline
+    document.getElementById("apresentacao-fundo").style.backgroundImage = `url('${loja.banner}')`
+
+    if (loja.seloConfianca) {
+        document.getElementById("apresentacao-selo-texto").textContent = loja.seloConfianca
+        document.getElementById("apresentacao-selo-sub").textContent = loja.seloConfiancaSub || ""
+        document.getElementById("apresentacao-selo").style.display = "flex"
+    }
+
+    // Se ainda não tiver o horário estruturado configurado,
     // cai pro texto manual antigo — não quebra clientes já no ar.
     document.getElementById("loja-horario").textContent = textoHorarioHoje(loja.horario) || loja.textoHorario
     document.getElementById("titulo-secao-menu").textContent = loja.tituloSecaoMenu
@@ -1655,4 +1670,20 @@ window.addEventListener("scroll", function () {
 
 topoBtn.addEventListener("click", function () {
     scrollSuavePara(0)
+})
+
+// ===========================
+// TELA DE APRESENTAÇÃO (splash inicial)
+// "Ver cardápio completo" fecha a tela e rola suavemente até o
+// cardápio.
+// ===========================
+document.getElementById("apresentacao-ver-cardapio").addEventListener("click", function () {
+    document.getElementById("tela-apresentacao").style.display = "none"
+    document.body.classList.remove("apresentacao-ativa")
+
+    const alvoMenu = document.getElementById("titulo-secao-menu")
+    if (alvoMenu) {
+        const posicao = alvoMenu.getBoundingClientRect().top + window.scrollY - 16
+        scrollSuavePara(posicao)
+    }
 })
