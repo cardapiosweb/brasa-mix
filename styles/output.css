@@ -1128,11 +1128,6 @@ body{
   background-color: rgb(243 244 246 / var(--tw-bg-opacity, 1));
 }
 
-.hover\:text-gray-700:hover {
-  --tw-text-opacity: 1;
-  color: rgb(55 65 81 / var(--tw-text-opacity, 1));
-}
-
 @media (min-width: 768px) {
   .md\:w-\[600px\] {
     width: 600px;
