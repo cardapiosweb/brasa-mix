@@ -61,8 +61,11 @@ async function carregarDadosDaLoja() {
         tituloSecaoMenu: lojaDb.titulo_secao_menu,
         textoHorario: lojaDb.texto_horario,
         chavePix: lojaDb.chave_pix,
+        seloConfianca: lojaDb.selo_confianca,
+        seloConfiancaSub: lojaDb.selo_confianca_sub,
         horario: lojaDb.horario || {}
     }
+    //atualizacao
 
     // 3) Monta `categorias` no mesmo formato de objeto que script.js
     // espera, respeitando a ordem (campo "ordem")
