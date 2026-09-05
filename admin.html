@@ -1031,7 +1031,7 @@ function renderizarOpcoesEditor() {
                     <div class="grupo-opcao-linha2">
                         <div class="campo grupo-opcao-min${grupo.obrigatorio ? " visivel" : ""}" id="campo-min-${gi}">
                             <label>Mín. obrigatório</label>
-                            <input type="number" min="1" value="${grupo.min || 1}" oninput="opcoesProdutoAtual[${gi}].min = parseInt(this.value)||1" />
+                            <input type="number" min="1" value="${grupo.min || 1}" oninput="alternarMinOpcao(${gi}, this.value)" />
                         </div>
                         <div class="campo">
                             <label>Máx. de seleções</label>
@@ -1095,13 +1095,38 @@ function removerGrupoOpcao(gi) {
 
 function alternarObrigatorio(gi, marcado) {
     opcoesProdutoAtual[gi].obrigatorio = marcado
-    opcoesProdutoAtual[gi].min = marcado ? (opcoesProdutoAtual[gi].min || 1) : 0
+    opcoesProdutoAtual[gi].min = marcado ? Math.min(opcoesProdutoAtual[gi].min || 1, opcoesProdutoAtual[gi].max) : 0
     document.getElementById(`campo-min-${gi}`).querySelector("input").value = opcoesProdutoAtual[gi].min
     atualizarVisibilidadeMin(gi)
 }
 
+// Mesma proteção do lado do campo "Mín. obrigatório": não deixa o
+// lojista digitar um mínimo maior que o máximo já definido.
+function alternarMinOpcao(gi, valor) {
+    const grupo = opcoesProdutoAtual[gi]
+    grupo.min = Math.max(1, parseInt(valor) || 1)
+
+    if (grupo.min > grupo.max) {
+        grupo.min = grupo.max
+    }
+
+    document.getElementById(`campo-min-${gi}`).querySelector("input").value = grupo.min
+}
+
+// Garante min <= max sempre que o Máx. de seleções mudar — evita um
+// grupo obrigatório pedir mais seleções (min) do que o próprio máximo
+// permite, o que travaria o checkout desse produto pra sempre sem
+// nenhum aviso pro lojista.
 function alternarMaxOpcao(gi, valor) {
-    opcoesProdutoAtual[gi].max = parseInt(valor) || 1
+    const grupo = opcoesProdutoAtual[gi]
+    grupo.max = Math.max(1, parseInt(valor) || 1)
+
+    if (grupo.min > grupo.max) {
+        grupo.min = grupo.max
+        const inputMin = document.getElementById(`campo-min-${gi}`).querySelector("input")
+        if (inputMin) inputMin.value = grupo.min
+    }
+
     atualizarVisibilidadeMin(gi)
 }
 
@@ -1958,8 +1983,10 @@ document.getElementById("btn-salvar-produto").addEventListener("click", async ()
     if (temOpcoes) {
         const grupoSemNome = opcoesProdutoAtual.some(g => !g.nome.trim())
         const grupoSemItens = opcoesProdutoAtual.some(g => g.itens.length === 0 || g.itens.some(i => !i.nome.trim()))
-        if (opcoesProdutoAtual.length === 0 || grupoSemNome || grupoSemItens) {
-            alert("Preencha o nome de cada grupo de opções e o nome de cada item, ou desmarque 'Este produto tem opções'.")
+        const grupoMinMaiorQueMax = opcoesProdutoAtual.some(g => g.obrigatorio && g.min > g.max)
+
+        if (opcoesProdutoAtual.length === 0 || grupoSemNome || grupoSemItens || grupoMinMaiorQueMax) {
+            alert("Preencha o nome de cada grupo de opções e o nome de cada item, verifique se Mín. não é maior que Máx., ou desmarque 'Este produto tem opções'.")
             return
         }
     }
