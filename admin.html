@@ -751,7 +751,7 @@
         <h2 id="modal-titulo">Novo produto</h2>
         <input type="hidden" id="prod-id" />
         <div class="campo"><label>Nome</label><input id="prod-nome" /></div>
-        <div class="campo"><label>Categoria</label><input id="prod-categoria" placeholder="Ex: Pizzas Tradicionais" /></div>
+        <div class="campo"><label>Categoria</label><select id="prod-categoria"></select></div>
         <div class="campo"><label>Descrição</label><textarea id="prod-desc" rows="2"></textarea></div>
         <div class="campo"><label>Preço (R$)</label><input type="number" step="0.01" id="prod-preco" /></div>
         <div class="campo"><label>Estoque (deixe em branco pra não controlar)</label><input type="number" step="1" min="0" id="prod-estoque" placeholder="Ex: 20" /></div>
@@ -1338,7 +1338,13 @@ function preencherFormularioLoja() {
     document.getElementById("loja-usar-cor-personalizada").addEventListener("change", (e) => {
     document.getElementById("loja-cor").disabled = !e.target.checked
     })
-    categoriasAtuais = (lojaAtual.categorias || []).map(c => ({ ...c })).sort((a, b) => a.ordem - b.ordem)
+    // Categorias antigas (salvas antes desta função existir) podem não
+    // ter "id" — gera um agora, só na memória, pra conseguir rastrear
+    // renomeações depois. Vira permanente assim que "Salvar categorias"
+    // for clicado, porque o id entra no objeto salvo no banco.
+    categoriasAtuais = (lojaAtual.categorias || [])
+        .map(c => ({ ...c, id: c.id || crypto.randomUUID() }))
+        .sort((a, b) => a.ordem - b.ordem)
     renderizarCategorias()
 }
 
@@ -1346,9 +1352,44 @@ document.getElementById("btn-salvar-loja").addEventListener("click", async () =>
     const msg = document.getElementById("msg-loja")
     msg.innerHTML = ""
 
+    // Normaliza o WhatsApp antes de validar: remove espaço, parênteses,
+    // hífen e "+" — tudo que o lojista poderia colar sem querer ao
+    // copiar o número de outro lugar. O link gerado (wa.me/NUMERO) só
+    // funciona com dígitos puros, então isso evita salvar um valor que
+    // vai quebrar o botão de WhatsApp no site e no fechamento de mesa
+    // sem nenhum aviso até um cliente reclamar.
+    const whatsappDigitado = document.getElementById("loja-whatsapp").value.trim()
+    const whatsappNormalizado = whatsappDigitado.replace(/[\s()\-+]/g, "")
+
+    if (whatsappNormalizado && (!/^\d+$/.test(whatsappNormalizado) || whatsappNormalizado.length < 10 || whatsappNormalizado.length > 15)) {
+        msg.innerHTML = `<div class="aviso aviso-erro">WhatsApp inválido. Use só números com DDI e DDD (ex: 5591991396925), sem espaços, parênteses ou hífen.</div>`
+        return
+    }
+
+    // Valida "Número de mesas" antes de montar o objeto de atualização —
+    // parseInt de um valor que escapou da validação nativa do
+    // input[type=number] (ex: colar texto em navegadores/mobile mais
+    // permissivos) retorna NaN, que seria serializado como null pro
+    // Supabase silenciosamente, sem o lojista nunca saber que o valor
+    // digitado não foi salvo.
+    const numeroMesasDigitado = document.getElementById("loja-numero-mesas").value
+    let numeroMesasValidado = null
+    if (numeroMesasDigitado !== "") {
+        const numeroMesasConvertido = parseInt(numeroMesasDigitado)
+        if (isNaN(numeroMesasConvertido)) {
+            msg.innerHTML = `<div class="aviso aviso-erro">Número de mesas inválido. Digite apenas números.</div>`
+            return
+        }
+        // Limite superior de 200 é uma rede de segurança contra erro de
+        // digitação (ex: "500" em vez de "50") — sem isso, o Modo Garçom
+        // tentaria renderizar milhares de quadrados de uma vez e travar
+        // o navegador, principalmente no celular.
+        numeroMesasValidado = Math.min(200, Math.max(0, numeroMesasConvertido))
+    }
+
     const atualizacao = {
         nome: document.getElementById("loja-nome").value.trim(),
-        whatsapp: document.getElementById("loja-whatsapp").value.trim(),
+        whatsapp: whatsappNormalizado,
         tagline: document.getElementById("loja-tagline").value.trim(),
         endereco: document.getElementById("loja-endereco").value.trim(),
         titulo_secao_menu: document.getElementById("loja-titulo-menu").value.trim(),
@@ -1361,7 +1402,7 @@ document.getElementById("btn-salvar-loja").addEventListener("click", async () =>
             ? document.getElementById("loja-cor").value
             : null,
         ativa: document.getElementById("loja-ativa").value === "true",
-        numero_mesas: document.getElementById("loja-numero-mesas").value === "" ? null : Math.max(0, parseInt(document.getElementById("loja-numero-mesas").value))
+        numero_mesas: numeroMesasValidado
     }
 
     const { error } = await sb.from("lojas").update(atualizacao).eq("id", lojaAtual.id)
@@ -1457,7 +1498,7 @@ function removerCategoria(i) {
 }
 
 document.getElementById("btn-nova-categoria").addEventListener("click", () => {
-    categoriasAtuais.push({ nome: "", icone: "", ordem: categoriasAtuais.length, aberta_por_padrao: false })
+    categoriasAtuais.push({ id: crypto.randomUUID(), nome: "", icone: "", ordem: categoriasAtuais.length, aberta_por_padrao: false })
     renderizarCategorias()
 })
 
@@ -1470,18 +1511,73 @@ document.getElementById("btn-salvar-categorias").addEventListener("click", async
         return
     }
 
+    // Impede duas categorias com o mesmo nome — isso confundiria a
+    // ordenação de produtos e o agrupamento no site (as duas viram uma
+    // seção só, sem ninguém perceber o motivo).
+    const nomesNormalizados = categoriasAtuais.map(c => c.nome.trim().toLowerCase())
+    if (new Set(nomesNormalizados).size !== nomesNormalizados.length) {
+        msg.innerHTML = `<div class="aviso aviso-erro">Existem duas categorias com o mesmo nome — renomeie uma delas.</div>`
+        return
+    }
+
     const categoriasParaSalvar = categoriasAtuais.map((c, i) => ({
+        id: c.id || crypto.randomUUID(),
         nome: c.nome.trim(),
         icone: (c.icone || "").trim(),
         ordem: i,
         aberta_por_padrao: !!c.aberta_por_padrao
     }))
 
+    // Detecta categorias renomeadas (mesmo id, nome diferente do que
+    // estava salvo) pra atualizar em cascata os produtos que usam o
+    // nome antigo — senão eles ficam "órfãos", fora da categoria certa.
+    const categoriasSalvasAntes = lojaAtual.categorias || []
+    const renomeacoes = categoriasParaSalvar
+        .map(nova => {
+            const antiga = categoriasSalvasAntes.find(c => c.id === nova.id)
+            return antiga && antiga.nome !== nova.nome ? { de: antiga.nome, para: nova.nome } : null
+        })
+        .filter(Boolean)
+
     const { error } = await sb.from("lojas").update({ categorias: categoriasParaSalvar }).eq("id", lojaAtual.id)
 
     if (error) {
         msg.innerHTML = `<div class="aviso aviso-erro">Não foi possível salvar: ${error.message}</div>`
         return
+    }
+
+    // Aplica as renomeações nos produtos já cadastrados, uma categoria
+    // de cada vez. Resolve os produtos afetados de CADA renomeação antes
+    // de escrever qualquer coisa no banco — evita que uma troca cruzada
+    // de nomes (ex: "Bebidas" vira "Sucos" e "Sucos" vira "Bebidas" no
+    // mesmo salvamento) misture os produtos das duas categorias entre si.
+    const renomeacoesComIds = []
+    for (const { de, para } of renomeacoes) {
+        const { data: produtosAfetados, error: erroBusca } = await sb
+            .from("produtos")
+            .select("id")
+            .eq("loja_id", lojaAtual.id)
+            .eq("categoria", de)
+
+        if (erroBusca) {
+            msg.innerHTML = `<div class="aviso aviso-erro">Categorias salvas, mas houve um erro ao localizar os produtos de "${escaparHtml(de)}": ${escaparHtml(erroBusca.message)}</div>`
+            continue
+        }
+        renomeacoesComIds.push({ de, para, ids: (produtosAfetados || []).map(p => p.id) })
+    }
+
+    for (const { de, para, ids } of renomeacoesComIds) {
+        if (!ids.length) continue
+
+        const { error: erroProdutos } = await sb.from("produtos")
+            .update({ categoria: para })
+            .in("id", ids)
+
+        if (erroProdutos) {
+            msg.innerHTML = `<div class="aviso aviso-erro">Categorias salvas, mas houve um erro ao atualizar os produtos de "${escaparHtml(de)}": ${escaparHtml(erroProdutos.message)}</div>`
+        } else {
+            produtosAtuais.forEach(p => { if (ids.includes(p.id)) p.categoria = para })
+        }
     }
 
     lojaAtual.categorias = categoriasParaSalvar
@@ -1776,11 +1872,43 @@ function cancelarEdicaoProduto() {
     fecharModalProduto()
 }
 
+// Monta o select de categoria do modal de produto a partir das
+// categorias já cadastradas em "Dados da loja" — evita o lojista
+// digitar errado ou criar categoria "fantasma" sem querer. Se o
+// produto tiver uma categoria que não existe mais na lista (foi
+// renomeada/apagada), mantém ela visível como opção extra em vez
+// de trocar silenciosamente pra primeira categoria da lista.
+function preencherSelectCategoriaProduto(categoriaAtualDoProduto) {
+    const select = document.getElementById("prod-categoria")
+    select.innerHTML = ""
+
+    if (!categoriasAtuais.length) {
+        select.innerHTML = `<option value="">Nenhuma categoria cadastrada — crie uma em "Dados da loja"</option>`
+        return
+    }
+
+    categoriasAtuais.forEach(cat => {
+        const opt = document.createElement("option")
+        opt.value = cat.nome
+        opt.textContent = cat.nome
+        select.appendChild(opt)
+    })
+
+    if (categoriaAtualDoProduto && !categoriasAtuais.some(c => c.nome === categoriaAtualDoProduto)) {
+        const optAntiga = document.createElement("option")
+        optAntiga.value = categoriaAtualDoProduto
+        optAntiga.textContent = `${categoriaAtualDoProduto} (categoria removida)`
+        select.appendChild(optAntiga)
+    }
+
+    select.value = categoriaAtualDoProduto || categoriasAtuais[0].nome
+}
+
 function abrirModalProduto(produto) {
     document.getElementById("modal-titulo").textContent = produto ? "Editar produto" : "Novo produto"
     document.getElementById("prod-id").value = produto ? produto.id : ""
     document.getElementById("prod-nome").value = produto ? produto.nome : ""
-    document.getElementById("prod-categoria").value = produto ? produto.categoria : ""
+    preencherSelectCategoriaProduto(produto ? produto.categoria : "")
     document.getElementById("prod-desc").value = produto ? produto.desc || produto.descricao || "" : ""
     document.getElementById("prod-preco").value = produto ? produto.preco : ""
     document.getElementById("prod-estoque").value = (produto && produto.estoque !== null && produto.estoque !== undefined) ? produto.estoque : ""
