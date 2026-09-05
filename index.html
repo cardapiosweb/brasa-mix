@@ -1320,6 +1320,48 @@
         }
         .hero-cta-secundaria:hover { background: rgba(251,243,228,0.22); transform: translateY(-2px); }
 
+        /* Botões sempre lado a lado, mesmo em telas pequenas/médias.
+           flex: 0 1 auto (em vez de 1 1 0) deixa cada botão com a
+           largura do próprio texto, então "Chamar no WhatsApp" fica
+           mais largo que "Ver cardápio" em vez de dividir 50/50. */
+        @media (max-width: 480px) {
+            .hero-ctas {
+                flex-wrap: nowrap;
+                gap: 8px;
+            }
+            .hero-cta-primaria,
+            .hero-cta-secundaria {
+                padding: 10px 12px;
+                font-size: 13px;
+                gap: 6px;
+                flex: 0 1 auto;
+                min-width: 0;
+                justify-content: center;
+                white-space: nowrap;
+            }
+            .hero-cta-primaria i,
+            .hero-cta-secundaria i {
+                font-size: 13px;
+            }
+        }
+
+        @media (max-width: 340px) {
+            .hero-ctas {
+                gap: 6px;
+            }
+            .hero-cta-primaria,
+            .hero-cta-secundaria {
+                padding: 8px 8px;
+                font-size: 10.5px;
+                gap: 4px;
+                letter-spacing: -0.01em;
+            }
+            .hero-cta-primaria i,
+            .hero-cta-secundaria i {
+                font-size: 10.5px;
+            }
+        }
+
         /* ===== SEÇÃO: COMO FUNCIONA ===== */
         #como-funciona {
             background: var(--creme);
