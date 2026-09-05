@@ -1177,6 +1177,7 @@
             z-index: 2;
         }
         #header-banner .selo {
+            position: relative;
             width: 128px;
             height: 128px;
             border-radius: 50%;
@@ -1186,6 +1187,41 @@
             align-items: center;
             justify-content: center;
             box-shadow: 0 3px 14px rgba(0,0,0,0.45);
+        }
+
+        /* Selo "carimbo" — detalhe decorativo grudado no canto do logo */
+        .selo-carimbo {
+            position: absolute;
+            top: -6px;
+            right: -10px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--dourado);
+            border: 2px dashed rgba(36,27,22,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            transform: rotate(-14deg);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+        }
+        .selo-carimbo span {
+            font-family: var(--fonte-titulo);
+            font-weight: 800;
+            font-size: 9.5px;
+            line-height: 1.15;
+            color: var(--carvao);
+            text-transform: uppercase;
+        }
+        @media (max-width: 420px) {
+            .selo-carimbo {
+                width: 34px;
+                height: 34px;
+                top: -4px;
+                right: -6px;
+            }
+            .selo-carimbo span { font-size: 6px; }
         }
         #header-banner h1 {
             /* clamp em vez de tamanho fixo: em telas estreitas (320px)
@@ -1279,6 +1315,13 @@
             color: #FFFFFF;
             font-weight: 700;
             text-shadow: 0 1px 0 rgba(0,0,0,0.8), 0 2px 6px rgba(0,0,0,0.7);
+            display: inline-block;
+            padding: 10px 18px;
+            border-radius: 16px;
+            background: var(--vidro-bg-escuro);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--vidro-borda);
         }
         #date-span {
             border: 1.5px solid var(--laranja);
@@ -2120,7 +2163,10 @@
         /* ===== Reflexo de luz no topo (efeito "liquid glass") ===== */
         .hero-cta-primaria::before,
         .hero-cta-secundaria::before,
-        .selo-confianca-flutuante::before {
+        .selo-confianca-flutuante::before,
+        #dark-toggle::before,
+        .cart-flutuante::before,
+        #whats-flutuante::before {
             content: "";
             position: absolute;
             top: 0;
@@ -2219,6 +2265,11 @@
                 <!-- Ícone padrão até o config-loja.js trocar pelo ícone do tema escolhido -->
                 <div style="display:none" class="w-full h-full rounded-full flex items-center justify-center">
                     <i class="fa fa-store text-5xl" style="color: var(--laranja);"></i>
+                </div>
+
+                <!-- Selo "carimbo" decorativo -->
+                <div class="selo-carimbo">
+                    <span>Na<br>Brasa</span>
                 </div>
             </div>
 
