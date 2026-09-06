@@ -2526,11 +2526,13 @@ async function finalizarMesa(mesa, btnFinalizar) {
         return
     }
 
+    // Trava pelos IDs já lidos acima (não repete o filtro por mesa+status)
+    // — evita finalizar por engano um pedido novo que tenha chegado bem
+    // no meio do caminho, entre a busca e este update.
+    const idsPedidos = pedidos.map(p => p.id)
     const { error: erroUpdate } = await sb.from("pedidos_mesa")
         .update({ status: "finalizado" })
-        .eq("loja_id", lojaAtual.id)
-        .eq("mesa", mesa)
-        .eq("status", "aberto")
+        .in("id", idsPedidos)
 
     if (erroUpdate) {
         alert("Erro ao finalizar: " + erroUpdate.message)
@@ -2705,45 +2707,42 @@ function enviarWhatsappComMensagem(mensagem, abaWhats) {
     }
 }
 
-async function cancelarPedido(id) {
-    if (!confirm("Cancelar este pedido? Ele será removido da comanda e não entra no fechamento.")) return
-
-    const { error } = await sb.from("pedidos_mesa")
-        .delete()
-        .eq("id", id)
-        .eq("loja_id", lojaAtual.id)
-
-    if (error) {
-        alert("Não foi possível cancelar: " + error.message)
-        return
-    }
-
-    await carregarMesas()
-}
+// Evita que um duplo clique/duplo toque rode o cancelamento do MESMO
+// pedido duas vezes em paralelo — o que devolveria o estoque em dobro.
+const pedidosCancelando = new Set()
 
 async function cancelarPedido(id) {
+    if (pedidosCancelando.has(id)) return
+    pedidosCancelando.add(id)
+
+    try {
+
     if (!confirm("Cancelar este pedido? Ele será removido da comanda e não entra no fechamento.")) return
 
     // Busca os itens ANTES de apagar, pra saber o que devolver ao
     // estoque (o desconto já aconteceu quando o pedido foi enviado).
+    // Usa maybeSingle() em vez de single(): se o pedido já tiver sido
+    // apagado por outro clique/dispositivo, retorna null em vez de
+    // gerar erro no console.
     const { data: pedido } = await sb
         .from("pedidos_mesa")
         .select("itens")
         .eq("id", id)
         .eq("loja_id", lojaAtual.id)
-        .single()
+        .maybeSingle()
 
-    const { error } = await sb.from("pedidos_mesa")
+    const { data: linhaApagada, error } = await sb.from("pedidos_mesa")
         .delete()
         .eq("id", id)
         .eq("loja_id", lojaAtual.id) // trava extra: só apaga pedido da própria loja
+        .select("id")
 
     if (error) {
         alert("Não foi possível cancelar: " + error.message)
         return
     }
 
-    if (pedido && pedido.itens) {
+    if (pedido && pedido.itens && linhaApagada && linhaApagada.length > 0) {
         const quantidadesPorProduto = {}
         pedido.itens.forEach(i => {
             quantidadesPorProduto[i.id] = (quantidadesPorProduto[i.id] || 0) + i.quantity
@@ -2758,6 +2757,10 @@ async function cancelarPedido(id) {
 
     await carregarMesas()
     await carregarModoGarcom()
+
+    } finally {
+        pedidosCancelando.delete(id)
+    }
 }
 
 // ============================================================
