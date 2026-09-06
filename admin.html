@@ -291,6 +291,19 @@
     .horario-add-periodo{background:none;border:1.5px dashed var(--linha);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;color:#8a7361;width:100%;text-align:center;margin-top:8px;}
     .horario-add-periodo:hover{border-color:var(--tinta);color:var(--tinta);background:var(--tinta-clara);}
 
+    .bairro-linha{
+        display:grid;grid-template-columns:1fr 140px auto;gap:10px;align-items:center;
+        padding:10px 12px;border:1px solid var(--linha);border-radius:10px;margin-bottom:8px;background:white;
+    }
+    .bairro-linha input{width:100%;padding:8px 10px;border:1.5px solid var(--linha);border-radius:8px;font-size:13px;}
+    .bairro-linha .bairro-preco-wrap{position:relative;}
+    .bairro-linha .bairro-preco-wrap::before{
+        content:"R$";position:absolute;left:10px;top:50%;transform:translateY(-50%);
+        font-size:12px;color:#8a7361;font-weight:700;pointer-events:none;
+    }
+    .bairro-linha input.bairro-taxa{padding-left:30px;}
+    @media(max-width:480px){ .bairro-linha{grid-template-columns:1fr;} }
+
     .categoria-linha{
     display:grid;
     grid-template-columns:auto 1fr 130px auto auto;
@@ -709,6 +722,23 @@
                 </div>
             </div>
 
+            <!-- ===== Bairros e taxas de entrega ===== -->
+            <div class="card">
+                <button type="button" class="card-header-clicavel" data-toggle-card="bairros">
+                    <h2><i class="fa fa-chevron-right categoria-header-seta" data-seta-card="bairros"></i> Bairros e taxas de entrega</h2>
+                </button>
+                <div id="conteudo-card-bairros" style="display:none;">
+                <p style="font-size:13px;color:#8a7361;margin:-8px 0 14px;">Cadastre os bairros que a loja atende e o valor da taxa de cada um. No cardápio, o cliente escolhe o bairro dele e a taxa certa entra automaticamente no total.</p>
+                <div id="msg-bairros"></div>
+                <div id="lista-bairros"></div>
+                <button class="btn-novo" id="btn-novo-bairro" style="margin-top:10px;"><i class="fa fa-plus"></i> Novo bairro</button>
+                <div style="margin-top:16px;">
+                    <button class="btn-primario" id="btn-salvar-bairros" style="width:auto;padding:10px 22px;">Salvar bairros</button>
+                    <span id="salvando-bairros" style="font-size:13px;color:var(--ok);margin-left:10px;display:none;">Salvo ✓</span>
+                </div>
+                </div>
+            </div>
+
             <!-- ===== Horário de funcionamento ===== -->
             <div class="card">
                 <button type="button" class="card-header-clicavel" data-toggle-card="horario">
@@ -824,8 +854,43 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 let lojaAtual = null   // registro da loja do usuário logado
 let produtosAtuais = []
 let categoriasAtuais = []
+let bairrosAtuais = [] // bairros atendidos + taxa de cada um (aba Dados da loja)
 let categoriasAbertasProdutos = new Set() // nomes das categorias expandidas na lista de produtos (recolhidas por padrão)
 let canalMesasInscrito = false
+let audioCtx = null // criado só após um clique do usuário (exigência dos navegadores pra tocar som)
+
+// ============================================================
+// BEEP DE PEDIDO NOVO
+// Toca sozinho (sem arquivo de áudio) quando chega um pedido pela
+// tabela pedidos_mesa/comandas_finalizadas — útil quando o painel
+// fica em segundo plano (outra aba do navegador, tablet na cozinha
+// etc.), onde a bolinha visual sozinha pode passar despercebida.
+// ============================================================
+function iniciarAudioContexto() {
+    if (audioCtx) return
+    try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+    } catch (err) {
+        console.error("Áudio não suportado neste navegador", err)
+    }
+}
+
+function tocarBeepPedidoNovo() {
+    if (!audioCtx) return
+    // dois toques curtos, mais fácil de notar do que um beep só
+    ;[0, 0.18].forEach(atraso => {
+        const osc = audioCtx.createOscillator()
+        const ganho = audioCtx.createGain()
+        osc.type = "sine"
+        osc.frequency.value = 880
+        ganho.gain.setValueAtTime(0.18, audioCtx.currentTime + atraso)
+        ganho.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + atraso + 0.16)
+        osc.connect(ganho)
+        ganho.connect(audioCtx.destination)
+        osc.start(audioCtx.currentTime + atraso)
+        osc.stop(audioCtx.currentTime + atraso + 0.16)
+    })
+}
 
 // ============================================================
 // SEGURANÇA — escapar texto antes de inserir via innerHTML
@@ -1158,6 +1223,8 @@ async function fazerLogin() {
 
     if (!email || !senha) return
 
+    iniciarAudioContexto() // clique do usuário aqui já libera o beep de pedido novo pro resto da sessão
+
     btn.disabled = true
     btn.textContent = "Entrando..."
     erroLogin.style.display = "none"
@@ -1168,7 +1235,15 @@ async function fazerLogin() {
     btn.textContent = "Entrar"
 
     if (error) {
-        erroLogin.textContent = "E-mail ou senha incorretos."
+        // Erro de rede/DNS (ex: provedor de internet falhando em resolver
+        // o domínio do Supabase) chega aqui com mensagens como "Failed to
+        // fetch" — nada a ver com credencial errada. Sem essa checagem, o
+        // lojista via "E-mail ou senha incorretos" mesmo com tudo certo,
+        // só porque a internet dele não alcançou o servidor.
+        const pareceErroDeRede = /failed to fetch|network|load failed/i.test(error.message || "")
+        erroLogin.textContent = pareceErroDeRede
+            ? "Não foi possível conectar ao servidor. Verifique sua internet e tente novamente."
+            : "E-mail ou senha incorretos."
         erroLogin.style.display = "block"
         return
     }
@@ -1184,6 +1259,13 @@ document.getElementById("btn-sair").addEventListener("click", async () => {
 sb.auth.getSession().then(({ data }) => {
     if (data.session) iniciarPainel(data.session.user)
 })
+
+// Garante que o beep de pedido novo funcione mesmo quando a sessão
+// entra sozinha (sem passar pelo botão "Entrar") — inicializa o áudio
+// no primeiro clique/toque em qualquer lugar da página, já que os
+// navegadores exigem uma interação do usuário antes de liberar áudio.
+document.addEventListener("click", iniciarAudioContexto, { once: true })
+document.addEventListener("touchstart", iniciarAudioContexto, { once: true })
 
 // ---- Status da loja no cabeçalho (Ativa/Inativa — mesmo campo que
 // controla se ela aparece no site, aba Dados da loja) ----
@@ -1371,6 +1453,9 @@ function preencherFormularioLoja() {
         .map(c => ({ ...c, id: c.id || crypto.randomUUID() }))
         .sort((a, b) => a.ordem - b.ordem)
     renderizarCategorias()
+
+    bairrosAtuais = (lojaAtual.bairros_taxa || []).map(b => ({ ...b, id: b.id || crypto.randomUUID() }))
+    renderizarBairros()
 }
 
 document.getElementById("btn-salvar-loja").addEventListener("click", async () => {
@@ -1611,6 +1696,84 @@ document.getElementById("btn-salvar-categorias").addEventListener("click", async
     renderizarListaProdutos()
 
     const selo = document.getElementById("salvando-categorias")
+    selo.style.display = "inline"
+    setTimeout(() => selo.style.display = "none", 2000)
+})
+
+// ============================================================
+// ABA "DADOS DA LOJA" — Bairros e taxas de entrega
+// ============================================================
+function renderizarBairros() {
+    const lista = document.getElementById("lista-bairros")
+    lista.innerHTML = ""
+
+    if (!bairrosAtuais.length) {
+        lista.innerHTML = `<p style="color:#8a7361;font-size:14px;">Nenhum bairro cadastrado ainda — sem isso, o cardápio mostra "Taxa a combinar", igual hoje.</p>`
+        return
+    }
+
+    bairrosAtuais.forEach((b, i) => {
+        const linha = document.createElement("div")
+        linha.className = "bairro-linha"
+        linha.innerHTML = `
+            <input type="text" value="${escaparHtml(b.nome || "")}" placeholder="Nome do bairro" oninput="bairrosAtuais[${i}].nome = this.value" />
+            <div class="bairro-preco-wrap">
+                <input type="number" class="bairro-taxa" step="0.01" min="0" value="${b.taxa ?? 0}" placeholder="0,00" oninput="bairrosAtuais[${i}].taxa = parseFloat(this.value)||0" />
+            </div>
+            <button type="button" class="btn-icone apagar" title="Remover" onclick="removerBairro(${i})"><i class="fa fa-trash"></i></button>
+        `
+        lista.appendChild(linha)
+    })
+}
+
+function removerBairro(i) {
+    bairrosAtuais.splice(i, 1)
+    renderizarBairros()
+}
+
+document.getElementById("btn-novo-bairro").addEventListener("click", () => {
+    bairrosAtuais.push({ id: crypto.randomUUID(), nome: "", taxa: 0 })
+    renderizarBairros()
+})
+
+document.getElementById("btn-salvar-bairros").addEventListener("click", async () => {
+    const msg = document.getElementById("msg-bairros")
+    msg.innerHTML = ""
+
+    if (bairrosAtuais.some(b => !b.nome.trim())) {
+        msg.innerHTML = `<div class="aviso aviso-erro">Preencha o nome de todos os bairros.</div>`
+        return
+    }
+
+    const nomesNormalizados = bairrosAtuais.map(b => b.nome.trim().toLowerCase())
+    if (new Set(nomesNormalizados).size !== nomesNormalizados.length) {
+        msg.innerHTML = `<div class="aviso aviso-erro">Existem dois bairros com o mesmo nome — renomeie um deles.</div>`
+        return
+    }
+
+    if (bairrosAtuais.some(b => isNaN(b.taxa) || b.taxa < 0)) {
+        msg.innerHTML = `<div class="aviso aviso-erro">Verifique os valores de taxa — todos precisam ser números válidos, maiores ou iguais a zero.</div>`
+        return
+    }
+
+    const bairrosParaSalvar = bairrosAtuais.map(b => ({
+        id: b.id || crypto.randomUUID(),
+        nome: b.nome.trim(),
+        taxa: Number(b.taxa) || 0
+    }))
+
+    const { error } = await sb.from("lojas").update({ bairros_taxa: bairrosParaSalvar }).eq("id", lojaAtual.id)
+
+    if (error) {
+        msg.innerHTML = `<div class="aviso aviso-erro">Não foi possível salvar: ${error.message}</div>`
+        return
+    }
+
+    lojaAtual.bairros_taxa = bairrosParaSalvar
+    bairrosAtuais = bairrosParaSalvar.map(b => ({ ...b }))
+    renderizarBairros()
+
+    const selo = document.getElementById("salvando-bairros")
     selo.style.display = "inline"
     setTimeout(() => selo.style.display = "none", 2000)
 })
@@ -2611,6 +2774,8 @@ function inscreverAtualizacoesMesas() {
         .on("postgres_changes",
             { event: "INSERT", schema: "public", table: "pedidos_mesa", filter: `loja_id=eq.${lojaAtual.id}` },
             (payload) => {
+                tocarBeepPedidoNovo()
+
                 const abaMesasAtiva = document.getElementById("secao-mesas").classList.contains("ativa")
                 if (abaMesasAtiva) {
                     carregarMesas()
@@ -2644,6 +2809,7 @@ function inscreverAtualizacoesHistoricoDelivery() {
             { event: "INSERT", schema: "public", table: "comandas_finalizadas", filter: `loja_id=eq.${lojaAtual.id}` },
             (payload) => {
                 if (payload.new.origem !== "delivery") return
+                tocarBeepPedidoNovo()
                 const abaAtiva = document.getElementById("secao-historico-delivery").classList.contains("ativa")
                 if (abaAtiva) {
                     carregarHistoricoDelivery()
