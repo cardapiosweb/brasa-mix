@@ -390,45 +390,75 @@
             transform: rotate(-90deg);
         }
 
-        /* ===== BARRA DE CATEGORIAS (atalhos) ===== */
-        .categorias-nav {
+        /* ===== SEÇÃO "COMPRE POR CATEGORIA" (círculos) =====
+           Mesmo efeito "vidro" (fundo translúcido + blur) usado nos
+           cards de produto e nos diferenciais — sem isso a seção ficava
+           só com texto solto direto no fundo da página. */
+        #categorias-vitrine {
+            padding: 28px 20px 34px;
+            background: rgba(255,255,255,0.4);
+            backdrop-filter: blur(14px) saturate(160%);
+            -webkit-backdrop-filter: blur(14px) saturate(160%);
+            border: 1px solid rgba(255,255,255,0.5);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(36,27,22,0.08);
+        }
+        body.dark #categorias-vitrine {
+            background: rgba(36,27,22,0.4);
+            border-color: rgba(255,255,255,0.08);
+        }
+        .categorias-vitrine-titulo {
+            text-align: center;
+            margin-bottom: 22px;
+        }
+        .categorias-vitrine-grid {
             display: flex;
-            gap: 10px;
+            gap: 22px;
             overflow-x: auto;
-            padding: 4px 4px 22px;
+            padding: 6px 4px 10px;
             scrollbar-width: thin;
             scrollbar-color: var(--linha) transparent;
         }
-        .categorias-nav::-webkit-scrollbar { height: 4px; }
-        .categorias-nav::-webkit-scrollbar-track { background: transparent; }
-        .categorias-nav::-webkit-scrollbar-thumb {
-            background: var(--linha);
-            border-radius: 999px;
-            opacity: 0.5;
-        }
-        .categoria-nav-btn {
+        .categorias-vitrine-grid::-webkit-scrollbar { height: 4px; }
+        .categorias-vitrine-grid::-webkit-scrollbar-thumb { background: var(--linha); border-radius: 999px; }
+        .categoria-circulo-item {
             flex: 0 0 auto;
-            white-space: nowrap;
-            padding: 8px 16px;
-            border-radius: 999px;
-            border: 1.5px solid var(--laranja);
-            color: var(--laranja);
-            background: rgba(251,243,228,0.55);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            font-weight: 600;
-            font-size: 14px;
+            width: 108px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
             cursor: pointer;
-            transition: background 0.2s, color 0.2s;
+            border: none;
+            background: none;
+            font-family: inherit;
         }
-        .categoria-nav-btn:hover,
-        .categoria-nav-btn.ativa {
-            background: var(--laranja);
-            color: white;
+        .categoria-circulo-foto {
+            width: 92px;
+            height: 92px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--laranja-claro);
+            transition: border-color 0.2s, transform 0.2s;
         }
-        body.dark .categoria-nav-btn { background: #241B16; }
-        body.dark .categoria-nav-btn:hover,
-        body.dark .categoria-nav-btn.ativa { background: var(--laranja); color: white; }
+        .categoria-circulo-item:hover .categoria-circulo-foto,
+        .categoria-circulo-item.ativa .categoria-circulo-foto {
+            border-color: var(--laranja);
+            transform: scale(1.05);
+        }
+        .categoria-circulo-nome {
+            font-size: 12.5px;
+            font-weight: 700;
+            text-align: center;
+            color: var(--carvao);
+            line-height: 1.25;
+        }
+        body.dark .categoria-circulo-nome { color: #F3E9DA; }
+
+        @media (max-width: 480px) {
+            #categorias-vitrine { padding: 18px 14px 22px; }
+            .categorias-vitrine-titulo { margin-bottom: 14px; }
+        }
 
         /* Badge de oferta: como um "carimbo" de forno */
         .badge-oferta {
@@ -2338,10 +2368,13 @@
 
     <h2 class="text-2xl md:text-3xl font-bold text-center mt-9 mb-4" id="titulo-secao-menu"></h2>
 
-    <!-- Barra de atalhos das categorias (gerada pelo script.js) -->
-    <div class="mx-auto max-w-7xl px-4">
-        <nav id="categorias-nav" class="categorias-nav"></nav>
-    </div>
+    <!-- ===== COMPRE POR CATEGORIA (vitrine em círculo) =====
+         Preenchida pelo script.js, em renderizarVitrineCategorias() —
+         usa a foto do primeiro produto de cada categoria. -->
+    <section id="categorias-vitrine" class="mx-auto max-w-7xl px-4 mb-8">
+        <h2 class="categorias-vitrine-titulo text-2xl md:text-3xl font-bold" id="titulo-categorias-vitrine">Compre por categoria</h2>
+        <div id="categorias-vitrine-grid" class="categorias-vitrine-grid"></div>
+    </section>
 
     <div id="menu"></div>
 

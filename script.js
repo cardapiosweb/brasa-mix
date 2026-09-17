@@ -167,9 +167,7 @@ function corDoToast() {
 // ===========================
 function renderizarProdutos() {
     const menu = document.getElementById("menu")
-    const nav = document.getElementById("categorias-nav")
     menu.innerHTML = ""
-    if (nav) nav.innerHTML = ""
 
     // Modo delivery esconde produtos "só retirada"
     const produtosVisiveis = modoMesa
@@ -234,8 +232,10 @@ function renderizarProdutos() {
             tituloWrapper.querySelector(".category-chevron").classList.add("chevron-fechado")
         }
 
-        // Clique no título esconde/mostra os produtos dessa categoria
-        tituloWrapper.addEventListener("click", () => {
+        // Abre/fecha os produtos dessa categoria — extraída em função
+        // nomeada pra poder ser reaproveitada pela vitrine em círculo
+        // (irParaCategoria), sem duplicar a lógica de animação.
+        function abrirOuFecharCategoria() {
             const chevron = tituloWrapper.querySelector(".category-chevron")
             const estaAberta = !grid.classList.contains("categoria-fechada")
 
@@ -253,31 +253,64 @@ function renderizarProdutos() {
             }
 
             chevron.classList.toggle("chevron-fechado")
-        })
-
-        // Botão de atalho na barra de categorias
-        if (nav) {
-            const navBtn = document.createElement("button")
-            navBtn.className = "categoria-nav-btn"
-            navBtn.type = "button"
-            navBtn.textContent = categoria
-            navBtn.addEventListener("click", () => {
-                nav.querySelectorAll(".categoria-nav-btn").forEach(b => b.classList.remove("ativa"))
-                navBtn.classList.add("ativa")
-
-                // Se a categoria estiver fechada, abre ela também
-                if (grid.classList.contains("categoria-fechada")) {
-                    tituloWrapper.click()
-                }
-
-                // Rolagem manual e suave (mais confiável do que o
-                // comportamento nativo do navegador)
-                const alvo = document.getElementById(tituloId)
-                const posicao = alvo.getBoundingClientRect().top + window.scrollY - 16
-                scrollSuavePara(posicao)
-            })
-            nav.appendChild(navBtn)
         }
+
+        tituloWrapper.addEventListener("click", abrirOuFecharCategoria)
+
+        // Marca visual (círculo) e rolagem até a categoria — usada pela
+        // vitrine em círculo.
+        function irParaCategoria() {
+            document.querySelectorAll(".categoria-circulo-item").forEach(b => b.classList.remove("ativa"))
+            const circulo = document.querySelector(`.categoria-circulo-item[data-categoria-index="${index}"]`)
+            if (circulo) circulo.classList.add("ativa")
+
+            if (grid.classList.contains("categoria-fechada")) {
+                abrirOuFecharCategoria()
+            }
+
+            const posicao = tituloWrapper.getBoundingClientRect().top + window.scrollY - 16
+            scrollSuavePara(posicao)
+        }
+
+        // Guarda a função de navegação pra reaproveitar na vitrine de círculos
+        produtosPorCategoria[categoria]._irParaCategoria = irParaCategoria
+    })
+
+    renderizarVitrineCategorias(ordemFinal, produtosPorCategoria)
+}
+
+// ===========================
+// "COMPRE POR CATEGORIA" (vitrine em círculo, logo abaixo dos diferenciais)
+// Usa a primeira foto de um produto de cada categoria como retrato do
+// círculo — não exige nenhuma imagem extra cadastrada pelo lojista.
+// ===========================
+function renderizarVitrineCategorias(ordemFinal, produtosPorCategoria) {
+    const secao = document.getElementById("categorias-vitrine")
+    const grid = document.getElementById("categorias-vitrine-grid")
+    if (!grid) return
+    grid.innerHTML = ""
+
+    if (!ordemFinal.length) {
+        secao.style.display = "none"
+        return
+    }
+    secao.style.display = "block"
+
+    ordemFinal.forEach((categoria, index) => {
+        const produtosDaCategoria = produtosPorCategoria[categoria]
+        const foto = (produtosDaCategoria[0] && produtosDaCategoria[0].fotos[0]) || ""
+
+        const item = document.createElement("button")
+        item.type = "button"
+        item.className = "categoria-circulo-item"
+        item.dataset.categoriaIndex = index
+        item.innerHTML = `
+            <img class="categoria-circulo-foto" src="${escaparHtml(foto)}" alt="${escaparHtml(categoria)}"
+                onerror="imagemFallbackProduto(this, '200x200')" />
+            <span class="categoria-circulo-nome">${escaparHtml(categoria)}</span>
+        `
+        item.addEventListener("click", produtosDaCategoria._irParaCategoria)
+        grid.appendChild(item)
     })
 }
 
