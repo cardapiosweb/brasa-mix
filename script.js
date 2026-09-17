@@ -312,6 +312,44 @@ function renderizarVitrineCategorias(ordemFinal, produtosPorCategoria) {
         item.addEventListener("click", produtosDaCategoria._irParaCategoria)
         grid.appendChild(item)
     })
+
+    configurarSetasVitrine()
+}
+
+// Setas laterais da vitrine de categorias. Elas aparecem/somem sozinhas
+// conforme a posição da rolagem: some a da esquerda no começo, some a da
+// direita no fim, e as duas somem se todas as categorias já couberem na
+// tela (aí não teria o que revelar).
+function configurarSetasVitrine() {
+    const grid = document.getElementById("categorias-vitrine-grid")
+    const anterior = document.getElementById("vitrine-seta-anterior")
+    const proxima = document.getElementById("vitrine-seta-proxima")
+    if (!grid || !anterior || !proxima) return
+
+    const rolar = (direcao) => {
+        const passo = Math.max(grid.clientWidth * 0.8, 130)
+        grid.scrollBy({ left: passo * direcao, behavior: "smooth" })
+    }
+
+    const atualizar = () => {
+        const sobra = grid.scrollWidth - grid.clientWidth
+        const temOverflow = sobra > 4
+        anterior.classList.toggle("seta-oculta", !temOverflow || grid.scrollLeft <= 4)
+        proxima.classList.toggle("seta-oculta", !temOverflow || grid.scrollLeft >= sobra - 4)
+    }
+
+    anterior.onclick = () => rolar(-1)
+    proxima.onclick = () => rolar(1)
+
+    // Os listeners só são registrados uma vez, mesmo se a vitrine for
+    // redesenhada depois (ex: produtos recarregados).
+    if (!grid.dataset.setasProntas) {
+        grid.dataset.setasProntas = "1"
+        grid.addEventListener("scroll", atualizar, { passive: true })
+        window.addEventListener("resize", atualizar)
+    }
+
+    requestAnimationFrame(atualizar)
 }
 
 function criarCardProduto(produto) {

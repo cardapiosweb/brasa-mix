@@ -455,6 +455,53 @@
         }
         body.dark .categoria-circulo-nome { color: #F3E9DA; }
 
+        /* Setas laterais da vitrine de categorias — mesma aparência das
+           setas de navegação usadas em outros temas do template. Sem
+           elas, no celular o cliente não percebe que existem mais
+           categorias escondidas pro lado. */
+        .categorias-vitrine-wrap {
+            position: relative;
+        }
+        .categorias-vitrine-wrap .categorias-vitrine-grid {
+            scroll-behavior: smooth;
+        }
+        .categoria-seta {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 5;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(36,27,22,0.75);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+            transition: background 0.2s, transform 0.15s, opacity 0.25s ease;
+        }
+        .categoria-seta:hover { background: rgba(36,27,22,0.95); }
+        .categoria-seta:active { transform: translateY(-50%) scale(0.9); }
+        .vitrine-seta {
+            width: 34px;
+            height: 34px;
+            font-size: 12px;
+        }
+        .vitrine-seta.seta-oculta {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .categorias-vitrine-wrap .categoria-seta-anterior { left: -14px; }
+        .categorias-vitrine-wrap .categoria-seta-proxima { right: -14px; }
+        @media (max-width: 640px) {
+            .categorias-vitrine-wrap .categoria-seta-anterior { left: -8px; }
+            .categorias-vitrine-wrap .categoria-seta-proxima { right: -8px; }
+        }
+
         @media (max-width: 480px) {
             #categorias-vitrine { padding: 18px 14px 22px; }
             .categorias-vitrine-titulo { margin-bottom: 14px; }
@@ -2373,7 +2420,15 @@
          usa a foto do primeiro produto de cada categoria. -->
     <section id="categorias-vitrine" class="mx-auto max-w-7xl px-4 mb-8">
         <h2 class="categorias-vitrine-titulo text-2xl md:text-3xl font-bold" id="titulo-categorias-vitrine">Compre por categoria</h2>
-        <div id="categorias-vitrine-grid" class="categorias-vitrine-grid"></div>
+        <div class="categorias-vitrine-wrap">
+            <button type="button" class="categoria-seta categoria-seta-anterior vitrine-seta seta-oculta" id="vitrine-seta-anterior" title="Categorias anteriores">
+                <i class="fa fa-chevron-left"></i>
+            </button>
+            <div id="categorias-vitrine-grid" class="categorias-vitrine-grid"></div>
+            <button type="button" class="categoria-seta categoria-seta-proxima vitrine-seta seta-oculta" id="vitrine-seta-proxima" title="Mais categorias">
+                <i class="fa fa-chevron-right"></i>
+            </button>
+        </div>
     </section>
 
     <div id="menu"></div>
